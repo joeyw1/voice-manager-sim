@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Manager Sim</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #0f0f17;
+  --surface: #18181f;
+  --surface2: #22222c;
+  --border: #2e2e3e;
+  --text: #eeeef5;
+  --soft: #8888aa;
+  --dim: #44445a;
+  --blue: #4f8ef7;
+  --blue-dim: rgba(79,142,247,0.12);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.12);
+  --amber: #fbbf24;
+  --amber-dim: rgba(251,191,36,0.1);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.12);
+  --r: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen { display: none; flex-direction: column; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ── API KEY BANNER ── */
+.api-banner {
+  background: #1a1a2e;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.api-banner label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--soft);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.api-input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: monospace;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.api-input:focus { border-color: var(--blue); }
+.api-input::placeholder { color: var(--dim); }
+
+.api-save-btn {
+  background: var(--blue);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.api-save-btn:hover { background: #3a7de8; }
+
+.api-status {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.api-status.ok { background: var(--green-dim); color: var(--green); }
+.api-status.missing { background: var(--red-dim); color: var(--red); }
+
+.api-help {
+  font-size: 11px;
+  color: var(--dim);
+  width: 100%;
+}
+
+.api-help a { color: var(--blue); text-decoration: none; }
+
+/* ── SETUP ── */
+#setupScreen { align-items: center; justify-content: flex-start; padding: 28px 20px 40px; overflow-y: auto; }
+
+.setup-inner { width: 100%; max-width: 480px; }
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+
+.logo span { color: var(--blue); }
+.logo-sub { text-align: center; font-size: 13px; color: var(--soft); margin-bottom: 28px; }
+
+.setup-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--soft);
+  margin-bottom: 10px;
+}
+
+.opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+
+.opt {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  font-family: 'Inter', sans-serif;
+}
+
+.opt:hover { border-color: var(--blue); }
+.opt.sel { border-color: var(--blue); background: var(--blue-dim); }
+.opt-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+.opt-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.opt-desc { font-size: 11px; color: var(--dim); margin-top: 3px; line-height: 1.4; }
+
+.start-btn {
+  width: 100%;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+}
+
+.start-btn:hover:not(:disabled) { background: #3a7de8; }
+.start-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── CONV SCREEN ── */
+#convScreen { flex-direction: column; }
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.top-mgr { display: flex; align-items: center; gap: 10px; }
+
+.mgr-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--blue-dim);
+  border: 1px solid rgba(79,142,247,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+.mgr-info-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.mgr-info-role { font-size: 11px; color: var(--soft); }
+
+.top-right { display: flex; align-items: center; gap: 10px; }
+
+.top-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--soft); }
+
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.status-dot.speaking { animation: pg 1s ease-in-out infinite; }
+.status-dot.listening { background: var(--red); animation: pr 0.7s ease-in-out infinite; }
+.status-dot.idle { background: var(--dim); animation: none; }
+
+@keyframes pg { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+@keyframes pr { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+.end-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--soft);
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.end-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* Chat */
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  scroll-behavior: smooth;
+}
+
+.msg { display: flex; gap: 10px; align-items: flex-start; animation: fadeUp 0.25s ease; }
+.msg.you { flex-direction: row-reverse; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.msg-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; margin-top: 2px;
+}
+
+.msg-avatar.mgr { background: var(--blue-dim); border: 1px solid rgba(79,142,247,0.3); }
+.msg-avatar.you { background: var(--surface2); border: 1px solid var(--border); }
+
+.msg-content { max-width: 75%; }
+.msg-name { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+.msg.you .msg-name { text-align: right; }
+
+.bubble { border-radius: 12px; padding: 12px 16px; font-size: 14px; line-height: 1.6; }
+.bubble.mgr { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-top-left-radius: 4px; }
+.bubble.you { background: var(--blue-dim); border: 1px solid rgba(79,142,247,0.25); color: var(--text); border-top-right-radius: 4px; }
+
+.coaching-chip {
+  margin-top: 6px;
+  background: var(--green-dim);
+  border: 1px solid rgba(52,211,153,0.25);
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 12px;
+  color: var(--green);
+  line-height: 1.5;
+}
+
+.coaching-chip.warn { background: var(--amber-dim); border-color: rgba(251,191,36,0.25); color: var(--amber); }
+
+.typing-bubble {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; border-top-left-radius: 4px;
+  padding: 14px 18px; display: flex; gap: 5px; align-items: center;
+}
+
+.typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--soft); animation: tb 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2){animation-delay:0.2s}
+.typing-dot:nth-child(3){animation-delay:0.4s}
+@keyframes tb { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+/* Mic zone */
+.mic-zone {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px 20px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+
+.speaking-indicator { display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--green); }
+.speaking-indicator.active { display: flex; }
+
+.speak-wave { display: flex; gap: 2px; align-items: center; }
+.speak-bar { width: 3px; background: var(--green); border-radius: 2px; animation: wb 0.6s ease-in-out infinite; }
+.speak-bar:nth-child(1){height:8px;animation-delay:0s}
+.speak-bar:nth-child(2){height:14px;animation-delay:0.15s}
+.speak-bar:nth-child(3){height:10px;animation-delay:0.3s}
+.speak-bar:nth-child(4){height:14px;animation-delay:0.15s}
+.speak-bar:nth-child(5){height:8px;animation-delay:0s}
+
+.mic-btn {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  transition: all 0.2s;
+}
+
+.mic-btn:hover:not(.off) { border-color: var(--blue); transform: scale(1.05); }
+
+.mic-btn.listening {
+  border-color: var(--red);
+  background: var(--red-dim);
+  animation: mp 1.2s ease-in-out infinite;
+}
+
+.mic-btn.off { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+@keyframes mp { 0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,0.3)} 50%{box-shadow:0 0 0 14px rgba(248,113,113,0)} }
+
+.waveform { display: flex; align-items: center; gap: 3px; height: 20px; opacity: 0; transition: opacity 0.2s; }
+.waveform.active { opacity: 1; }
+.wave-bar { width: 3px; background: var(--red); border-radius: 2px; animation: wb 0.8s ease-in-out infinite; }
+.wave-bar:nth-child(1){animation-delay:0s}
+.wave-bar:nth-child(2){animation-delay:0.1s}
+.wave-bar:nth-child(3){animation-delay:0.2s}
+.wave-bar:nth-child(4){animation-delay:0.1s}
+.wave-bar:nth-child(5){animation-delay:0s}
+@keyframes wb { 0%,100%{height:4px} 50%{height:16px} }
+
+.live-transcript {
+  width: 100%; max-width: 400px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px;
+  font-size: 13px; color: var(--soft); font-style: italic;
+  min-height: 36px; text-align: center; display: none;
+}
+
+.live-transcript.active { display: block; }
+
+.mic-hint { font-size: 12px; color: var(--soft); text-align: center; line-height: 1.5; }
+.mic-hint.listening { color: var(--red); }
+.mic-hint.speaking { color: var(--green); }
+
+/* Summary */
+#summaryScreen { align-items: center; padding: 32px 20px; overflow-y: auto; }
+
+.summary-inner { width: 100%; max-width: 520px; }
+
+.summary-title { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+.summary-sub { font-size: 13px; color: var(--soft); margin-bottom: 24px; }
+
+.score-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+
+.score-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; text-align: center; min-width: 76px; }
+.score-num { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--blue); line-height: 1; }
+.score-num.mid { color: var(--amber); }
+.score-num.low { color: var(--red); }
+.score-lbl { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+
+.sum-section { margin-bottom: 14px; }
+.sum-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--blue); margin-bottom: 7px; }
+
+.sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; font-size: 14px; color: var(--soft); line-height: 1.6; }
+.sum-card strong { color: var(--text); }
+
+.tip-card { background: var(--amber-dim); border: 1px solid rgba(251,191,36,0.25); border-radius: var(--r); padding: 14px 16px; font-size: 14px; color: var(--amber); line-height: 1.6; }
+
+.again-btn { width: 100%; background: var(--blue); color: #fff; border: none; border-radius: var(--r); padding: 14px; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; margin-top: 20px; transition: background 0.15s; }
+.again-btn:hover { background: #3a7de8; }
+
+.spinner-wrap { text-align: center; padding: 24px; color: var(--soft); font-size: 14px; }
+
+@keyframes spin { to{transform:rotate(360deg)} }
+.spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
+
+@media(max-width:400px){ .opt-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div class="screen active" id="setupScreen">
+
+  <!-- API Key Banner -->
+  <div class="api-banner">
+    <label>🔑 API Key</label>
+    <input class="api-input" id="apiKeyInput" type="password"
+           placeholder="Paste your Anthropic API key here (sk-ant-...)"
+           oninput="updateApiStatus()">
+    <button class="api-save-btn" onclick="saveKey()">Save Key</button>
+    <span class="api-status missing" id="apiStatus">No key</span>
+    <div class="api-help">
+      Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+      → API Keys → Create Key. New accounts get $5 free credit.
+    </div>
+  </div>
+
+  <div class="setup-inner" style="margin-top:24px">
+    <div class="logo">Voice <span>Manager</span> Sim</div>
+    <div class="logo-sub">Speak aloud. Your manager replies. Get coached after every answer.</div>
+
+    <div class="setup-label">Choose your manager's style</div>
+    <div class="opt-grid" id="mgrGrid">
+      <button class="opt" onclick="pickMgr(this,'direct')">
+        <span class="opt-icon">⚡</span>
+        <div class="opt-name">Direct</div>
+        <div class="opt-desc">Short questions, expects crisp answers</div>
+      </button>
+      <button class="opt" onclick="pickMgr(this,'analytical')">
+        <span class="opt-icon">📊</span>
+        <div class="opt-name">Analytical</div>
+        <div class="opt-desc">Always asks "Why?" — wants your reasoning</div>
+      </button>
+      <button class="opt" onclick="pickMgr(this,'pressure')">
+        <span class="opt-icon">🔥</span>
+        <div class="opt-name">High Pressure</div>
+        <div class="opt-desc">Pushes back on every answer</div>
+      </button>
+      <button class="opt" onclick="pickMgr(this,'supportive')">
+        <span class="opt-icon">🤝</span>
+        <div class="opt-name">Supportive</div>
+        <div class="opt-desc">Warm but still expects clear structure</div>
+      </button>
+    </div>
+
+    <div class="setup-label">Choose the meeting type</div>
+    <div class="opt-grid" id="ctxGrid">
+      <button class="opt" onclick="pickCtx(this,'weekly')">
+        <span class="opt-icon">📅</span>
+        <div class="opt-name">Weekly Check-in</div>
+        <div class="opt-desc">Progress, blockers, priorities</div>
+      </button>
+      <button class="opt" onclick="pickCtx(this,'problem')">
+        <span class="opt-icon">🚨</span>
+        <div class="opt-name">Problem / Incident</div>
+        <div class="opt-desc">Something went wrong — explain it</div>
+      </button>
+      <button class="opt" onclick="pickCtx(this,'review')">
+        <span class="opt-icon">📈</span>
+        <div class="opt-name">Performance Review</div>
+        <div class="opt-desc">Your work, growth, and goals</div>
+      </button>
+      <button class="opt" onclick="pickCtx(this,'strategy')">
+        <span class="opt-icon">🧭</span>
+        <div class="opt-name">Strategy Discussion</div>
+        <div class="opt-desc">Your opinions and recommendations</div>
+      </button>
+    </div>
+
+    <button class="start-btn" id="startBtn" onclick="startSim()" disabled>🎤 Start Voice Simulation</button>
+  </div>
+</div>
+
+<!-- ══ CONVERSATION SCREEN ══ -->
+<div class="screen" id="convScreen">
+  <div class="top-bar">
+    <div class="top-mgr">
+      <div class="mgr-avatar" id="mgrAvatar">👔</div>
+      <div>
+        <div class="mgr-info-name" id="mgrName">Manager</div>
+        <div class="mgr-info-role" id="mgrRole">Meeting in progress</div>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="top-status">
+        <div class="status-dot idle" id="statusDot"></div>
+        <span id="statusText">Ready</span>
+      </div>
+      <button class="end-btn" onclick="endSim()">End →</button>
+    </div>
+  </div>
+
+  <div class="chat-area" id="chatArea"></div>
+
+  <div class="mic-zone">
+    <div class="speaking-indicator" id="speakingIndicator">
+      <div class="speak-wave">
+        <div class="speak-bar"></div><div class="speak-bar"></div>
+        <div class="speak-bar"></div><div class="speak-bar"></div>
+        <div class="speak-bar"></div>
+      </div>
+      Manager is speaking…
+    </div>
+
+    <button class="mic-btn off" id="micBtn" onclick="toggleMic()">🎤</button>
+
+    <div class="waveform" id="waveform">
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+    </div>
+
+    <div class="live-transcript" id="liveTranscript"></div>
+    <div class="mic-hint" id="micHint">Wait for the manager to finish…</div>
+  </div>
+</div>
+
+<!-- ══ SUMMARY SCREEN ══ -->
+<div class="screen" id="summaryScreen">
+  <div class="summary-inner">
+    <div class="summary-title">Session Complete</div>
+    <div class="summary-sub" id="summarySubtitle"></div>
+    <div id="summaryContent"><div class="spinner-wrap"><span class="spinner"></span> Analysing your session…</div></div>
+    <button class="again-btn" onclick="goSetup()">🔄 Try Another Simulation</button>
+  </div>
+</div>
+
+<script>
+// ══ API KEY ══
+let API_KEY = localStorage.getItem('vms_api_key') || '';
+
+window.onload = () => {
+  if (API_KEY) {
+    document.getElementById('apiKeyInput').value = API_KEY;
+    updateApiStatus();
+  }
+};
+
+function saveKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val) return;
+  API_KEY = val;
+  localStorage.setItem('vms_api_key', val);
+  updateApiStatus();
+  checkReady();
+}
+
+function updateApiStatus() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  const el = document.getElementById('apiStatus');
+  if (val.startsWith('sk-ant-') || val.startsWith('sk-')) {
+    el.textContent = '✓ Key set';
+    el.className = 'api-status ok';
+    API_KEY = val;
+    localStorage.setItem('vms_api_key', val);
+  } else if (val.length > 0) {
+    el.textContent = '? Check key';
+    el.className = 'api-status missing';
+  } else {
+    el.textContent = 'No key';
+    el.className = 'api-status missing';
+  }
+  checkReady();
+}
+
+// ══ PROFILES ══
+const MGR = {
+  direct:    { name:'Alex Chen',    role:'Senior Manager',    emoji:'⚡', vRate:1.05, vPitch:1.0,  system:'You are Alex Chen, a direct and demanding manager. Ask short pointed questions one at a time. Expect crisp structured answers — conclusion first. If someone rambles say "Can you get to the point?" Keep replies to 1-3 sentences.' },
+  analytical:{ name:'Dr. Wei',      role:'Head of Analytics', emoji:'📊', vRate:0.98, vPitch:0.95, system:'You are Dr. Wei, an analytical manager. Always probe with "Why?" or "How do you know that?" after each answer. Want reasoning not just conclusions. Calm but demanding. Keep replies to 1-3 sentences.' },
+  pressure:  { name:'Marcus Reid',  role:'VP Operations',     emoji:'🔥', vRate:1.08, vPitch:0.9,  system:'You are Marcus Reid, high-pressure VP. Challenge every answer: "I\'m not convinced", "Give me something stronger." Acknowledge genuinely strong answers briefly then push further. Keep replies to 1-3 sentences.' },
+  supportive:{ name:'Sarah Lim',    role:'Team Lead',         emoji:'🤝', vRate:1.0,  vPitch:1.05, system:'You are Sarah Lim, supportive warm manager. Encourage but expect clear structured answers. If someone rambles gently redirect: "Can you give me the short version?" Keep replies to 1-3 sentences.' }
+};
+
+const CTX = {
+  weekly:   'Weekly check-in: ask about progress on tasks, blockers, and priorities for next week.',
+  problem:  'A project issue or client complaint happened. Ask what went wrong, why, and what the fix plan is.',
+  review:   'Performance review: ask about achievements, struggles, and development goals.',
+  strategy: 'Strategy discussion: ask for opinions on direction, recommendations, and trade-off thinking.'
+};
+
+// ══ STATE ══
+let chosenMgr = null, chosenCtx = null;
+let simHistory = [], simScores = [], simRound = 0, sessionEnded = false;
+let recognition = null, isListening = false;
+let micFinal = '';
+const synth = window.speechSynthesis;
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+// ══ SETUP ══
+function pickMgr(btn, key) {
+  document.querySelectorAll('#mgrGrid .opt').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  chosenMgr = key;
+  checkReady();
+}
+
+function pickCtx(btn, key) {
+  document.querySelectorAll('#ctxGrid .opt').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  chosenCtx = key;
+  checkReady();
+}
+
+function checkReady() {
+  const hasKey = API_KEY && (API_KEY.startsWith('sk-'));
+  document.getElementById('startBtn').disabled = !(chosenMgr && chosenCtx && hasKey);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══ CLAUDE API ══
+async function callClaude(messages, system, maxTokens=350) {
+  if (!API_KEY) throw new Error('No API key');
+  const body = { model:'claude-sonnet-4-6', max_tokens: maxTokens, messages };
+  if (system) body.system = system;
+  const res = await fetch('/api/claude', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'x-api-key': API_KEY, 'anthropic-version':'2023-06-01' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.error?.message || 'API error ' + res.status);
+  }
+  const data = await res.json();
+  return data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+}
+
+// ══ START ══
+async function startSim() {
+  const mgr = MGR[chosenMgr];
+  simHistory = []; simScores = []; simRound = 0; sessionEnded = false;
+  document.getElementById('chatArea').innerHTML = '';
+  document.getElementById('mgrAvatar').textContent = mgr.emoji;
+  document.getElementById('mgrName').textContent = mgr.name;
+  document.getElementById('mgrRole').textContent = mgr.role;
+  showScreen('convScreen');
+  setStatus('idle','Starting…');
+  setMicOff();
+
+  try {
+    const opening = await callClaude(
+      [{ role:'user', content:'Start the meeting with a brief greeting and your first question.' }],
+      buildSystem()
+    );
+    simHistory.push({ role:'assistant', content: opening });
+    addBubble('mgr', opening);
+    simRound = 1;
+    await speakText(opening);
+  } catch(e) {
+    addBubble('mgr', '⚠ Connection error: ' + e.message + '. Check your API key and try again.');
+    setMicOn();
+  }
+}
+
+function buildSystem() {
+  return `${MGR[chosenMgr].system}
+
+Meeting context: ${CTX[chosenCtx]}
+
+RULES:
+- Ask ONE question per turn only.
+- After employee answers, reply briefly in character (1-3 sentences) then ask your next question.
+- After 5-6 exchanges wrap up naturally with a closing remark.
+- Stay in character as ${MGR[chosenMgr].name} throughout. Never give coaching yourself.`;
+}
+
+// ══ TTS ══
+function speakText(text) {
+  return new Promise(resolve => {
+    synth.cancel();
+    const mgr = MGR[chosenMgr];
+    const utt = new SpeechSynthesisUtterance(text.replace(/\[.*?\]/g,'').trim());
+    utt.lang = 'en-US';
+    utt.rate = mgr.vRate;
+    utt.pitch = mgr.vPitch;
+
+    // Pick voice
+    const voices = synth.getVoices().filter(v => v.lang.startsWith('en'));
+    if (voices.length) {
+      const idx = Object.keys(MGR).indexOf(chosenMgr);
+      utt.voice = voices[Math.min(idx, voices.length-1)];
+    }
+
+    setStatus('speaking','Manager speaking…');
+    document.getElementById('speakingIndicator').classList.add('active');
+    setMicOff();
+
+    utt.onend = utt.onerror = () => {
+      document.getElementById('speakingIndicator').classList.remove('active');
+      if (!sessionEnded) { setStatus('idle','Tap mic to speak'); setMicOn(); }
+      resolve();
+    };
+
+    synth.speak(utt);
+  });
+}
+
+// ══ SPEECH REC ══
+function toggleMic() {
+  if (isListening) stopListening();
+  else startListening();
+}
+
+function startListening() {
+  if (!SpeechRec) {
+    const t = prompt('Voice not supported. Type your answer:');
+    if (t?.trim()) handleSpeech(t.trim());
+    return;
+  }
+
+  micFinal = '';
+  recognition = new SpeechRec();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) micFinal += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    const lt = document.getElementById('liveTranscript');
+    lt.textContent = (micFinal + interim).trim() || 'Listening…';
+  };
+
+  recognition.onend = () => {
+    if (!isListening) return;
+    isListening = false;
+    resetMicVisual();
+    const text = micFinal.trim();
+    if (text) handleSpeech(text);
+    else setStatus('idle','Didn\'t catch that — tap mic to retry');
+  };
+
+  recognition.onerror = e => {
+    isListening = false;
+    resetMicVisual();
+    if (e.error !== 'no-speech') setStatus('idle','Mic error — tap to retry');
+  };
+
+  recognition.start();
+  isListening = true;
+
+  const btn = document.getElementById('micBtn');
+  btn.classList.add('listening'); btn.classList.remove('off');
+  btn.textContent = '⏹';
+  document.getElementById('waveform').classList.add('active');
+  document.getElementById('liveTranscript').classList.add('active');
+  document.getElementById('liveTranscript').textContent = 'Listening…';
+  document.getElementById('micHint').textContent = 'Listening… tap ⏹ to stop';
+  document.getElementById('micHint').className = 'mic-hint listening';
+  setStatus('listening','Listening…');
+}
+
+function stopListening() {
+  isListening = false;
+  if (recognition) { recognition.stop(); recognition = null; }
+  resetMicVisual();
+}
+
+function resetMicVisual() {
+  document.getElementById('waveform').classList.remove('active');
+  document.getElementById('liveTranscript').classList.remove('active');
+  const btn = document.getElementById('micBtn');
+  btn.classList.remove('listening');
+  btn.textContent = '🎤';
+}
+
+async function handleSpeech(text) {
+  if (!text || sessionEnded) return;
+  setMicOff();
+  setStatus('idle','Processing…');
+
+  const lastMgrQ = simHistory.filter(m=>m.role==='assistant').slice(-1)[0]?.content || '';
+  addBubble('you', text);
+  simHistory.push({ role:'user', content: text });
+  addTyping();
+
+  try {
+    const [mgrReply, coachRaw] = await Promise.all([
+      callClaude(simHistory, buildSystem()),
+      callClaude([{ role:'user', content:
+        `Communication coach. Non-native speaker answered their manager.\nManager: "${lastMgrQ}"\nAnswer: "${text}"\nJSON only no markdown:\n{"clarity":7,"structure":6,"directness":7,"verdict":"good","coaching":"One tip max 18 words","question_type":"update"}`
+      }], null, 200).catch(()=>null)
+    ]);
+
+    removeTyping();
+
+    if (coachRaw) {
+      try {
+        const cp = JSON.parse(coachRaw.trim());
+        simScores.push(cp);
+        const avg = Math.round((cp.clarity+cp.structure+cp.directness)/3);
+        attachCoaching(
+          `${cp.verdict==='good'?'✓':'⚠'} [${cp.question_type} · ${avg}/10] ${cp.coaching}`,
+          cp.verdict !== 'good'
+        );
+      } catch(e){}
+    }
+
+    simHistory.push({ role:'assistant', content: mgrReply });
+    simRound++;
+    addBubble('mgr', mgrReply);
+
+    const lower = mgrReply.toLowerCase();
+    const ending = simRound >= 7 ||
+      (lower.includes('thank') && (lower.includes('meeting')||lower.includes('next time')||lower.includes('wrap')||lower.includes('that\'s all')));
+
+    if (ending) {
+      sessionEnded = true;
+      await speakText(mgrReply);
+      setTimeout(endSim, 1000);
+    } else {
+      await speakText(mgrReply);
+    }
+
+  } catch(e) {
+    removeTyping();
+    addBubble('mgr','⚠ Error: ' + e.message);
+    setMicOn();
+  }
+}
+
+// ══ UI HELPERS ══
+function addBubble(role, text) {
+  const chat = document.getElementById('chatArea');
+  const mgr = MGR[chosenMgr] || { name:'Manager', emoji:'👔' };
+  const isYou = role === 'you';
+  const div = document.createElement('div');
+  div.className = 'msg' + (isYou?' you':'');
+  div.innerHTML = `
+    <div class="msg-avatar ${isYou?'you':'mgr'}">${isYou?'🙂':mgr.emoji}</div>
+    <div class="msg-content">
+      <div class="msg-name">${isYou?'You':mgr.name}</div>
+      <div class="bubble ${isYou?'you':'mgr'}">${text.replace(/\n/g,'<br>')}</div>
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function attachCoaching(text, isWarn) {
+  const chat = document.getElementById('chatArea');
+  const youMsgs = [...chat.querySelectorAll('.msg.you')];
+  const last = youMsgs[youMsgs.length-1];
+  if (!last) return;
+  const chip = document.createElement('div');
+  chip.className = 'coaching-chip' + (isWarn?' warn':'');
+  chip.textContent = text;
+  last.querySelector('.msg-content').appendChild(chip);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addTyping() {
+  const chat = document.getElementById('chatArea');
+  const mgr = MGR[chosenMgr] || { name:'Manager', emoji:'👔' };
+  const div = document.createElement('div');
+  div.className='msg'; div.id='typingMsg';
+  div.innerHTML=`
+    <div class="msg-avatar mgr">${mgr.emoji}</div>
+    <div class="msg-content">
+      <div class="msg-name">${mgr.name}</div>
+      <div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() { document.getElementById('typingMsg')?.remove(); }
+
+function setStatus(type, text) {
+  document.getElementById('statusDot').className = 'status-dot ' + type;
+  document.getElementById('statusText').textContent = text;
+}
+
+function setMicOn() {
+  const btn = document.getElementById('micBtn');
+  btn.classList.remove('off','listening');
+  btn.textContent = '🎤';
+  document.getElementById('micHint').textContent = 'Tap mic to speak your answer';
+  document.getElementById('micHint').className = 'mic-hint';
+}
+
+function setMicOff() {
+  const btn = document.getElementById('micBtn');
+  btn.classList.add('off'); btn.classList.remove('listening');
+  btn.textContent = '🎤';
+  document.getElementById('waveform').classList.remove('active');
+  document.getElementById('liveTranscript').classList.remove('active');
+}
+
+// ══ END & SUMMARY ══
+async function endSim() {
+  sessionEnded = true;
+  synth.cancel();
+  if (recognition) { recognition.stop(); recognition = null; }
+  isListening = false;
+
+  const mgr = MGR[chosenMgr];
+  const ctxNames = { weekly:'Weekly Check-in', problem:'Problem / Incident', review:'Performance Review', strategy:'Strategy Discussion' };
+  document.getElementById('summarySubtitle').textContent = `${mgr.name} · ${ctxNames[chosenCtx]} · ${simRound} exchanges`;
+  showScreen('summaryScreen');
+
+  if (simScores.length === 0) {
+    document.getElementById('summaryContent').innerHTML = '<div class="sum-card">Complete at least 2 exchanges to get a full report.</div>';
+    return;
+  }
+
+  const avg = arr => Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+  const clarity = avg(simScores.map(s=>s.clarity));
+  const structure = avg(simScores.map(s=>s.structure));
+  const directness = avg(simScores.map(s=>s.directness));
+  const overall = avg([clarity,structure,directness]);
+  const cc = n => n>=8?'':n>=6?'mid':'low';
+
+  document.getElementById('summaryContent').innerHTML = `
+    <div class="score-row">
+      <div class="score-chip"><div class="score-num ${cc(overall)}">${overall}/10</div><div class="score-lbl">Overall</div></div>
+      <div class="score-chip"><div class="score-num ${cc(clarity)}">${clarity}/10</div><div class="score-lbl">Clarity</div></div>
+      <div class="score-chip"><div class="score-num ${cc(structure)}">${structure}/10</div><div class="score-lbl">Structure</div></div>
+      <div class="score-chip"><div class="score-num ${cc(directness)}">${directness}/10</div><div class="score-lbl">Directness</div></div>
+    </div>
+    <div class="spinner-wrap"><span class="spinner"></span> Generating coaching report…</div>`;
+
+  try {
+    const transcript = simHistory.map(m=>`${m.role==='assistant'?'MANAGER':'YOU'}: ${m.content}`).join('\n\n');
+    const raw = await callClaude([{ role:'user', content:
+      `Senior communication coach reviewing a manager meeting simulation. Employee is a fluent non-native speaker who tends to speak in circles when put on the spot.\n\nTranscript:\n${transcript}\n\nJSON only no markdown:\n{"manager_impression":"1 sentence how manager saw this person","top_strength":"specific strength","top_weakness":"specific fix with example","circling_detected":true,"circling_example":"exact phrase or empty string","one_drill":"practise this week max 22 words"}`
+    }], null, 600);
+
+    const cp = JSON.parse(raw.trim());
+    document.getElementById('summaryContent').innerHTML = `
+      <div class="score-row">
+        <div class="score-chip"><div class="score-num ${cc(overall)}">${overall}/10</div><div class="score-lbl">Overall</div></div>
+        <div class="score-chip"><div class="score-num ${cc(clarity)}">${clarity}/10</div><div class="score-lbl">Clarity</div></div>
+        <div class="score-chip"><div class="score-num ${cc(structure)}">${structure}/10</div><div class="score-lbl">Structure</div></div>
+        <div class="score-chip"><div class="score-num ${cc(directness)}">${directness}/10</div><div class="score-lbl">Directness</div></div>
+      </div>
+      <div class="sum-section">
+        <div class="sum-label">How your manager saw you</div>
+        <div class="sum-card" style="font-style:italic">"${cp.manager_impression}"</div>
+      </div>
+      <div class="sum-section">
+        <div class="sum-label">Top strength</div>
+        <div class="sum-card">✓ <strong>${cp.top_strength}</strong></div>
+      </div>
+      <div class="sum-section">
+        <div class="sum-label">Most important fix</div>
+        <div class="sum-card">⚠ <strong>${cp.top_weakness}</strong></div>
+      </div>
+      ${cp.circling_detected && cp.circling_example
+        ? `<div class="sum-section"><div class="sum-label">Circling detected</div><div class="sum-card" style="color:var(--amber)">🔄 "${cp.circling_example}"<br><span style="font-size:12px;color:var(--dim);margin-top:4px;display:block">Fix: state your conclusion in the very first sentence.</span></div></div>`
+        : `<div class="sum-card" style="color:var(--green);margin-bottom:14px">✓ No major circling this session — good work.</div>`}
+      <div class="tip-card">📌 This week's drill: ${cp.one_drill}</div>`;
+  } catch(e) {
+    document.getElementById('summaryContent').innerHTML += `<div class="sum-card" style="color:var(--red)">Could not load full report: ${e.message}</div>`;
+  }
+}
+
+function goSetup() {
+  synth.cancel();
+  if (recognition) { recognition.stop(); recognition = null; }
+  isListening = false; sessionEnded = false;
+  document.querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
+  chosenMgr = null; chosenCtx = null;
+  checkReady();
+  showScreen('setupScreen');
+}
+
+// Load voices early
+synth.onvoiceschanged = () => synth.getVoices();
+synth.getVoices();
+</script>
+</body>
+</html>
