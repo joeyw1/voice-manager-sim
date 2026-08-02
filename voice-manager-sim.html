@@ -236,7 +236,8 @@ async function startSim(){
   showScreen('convScreen');
   setStatus('idle','Starting…');setMicOff();
   try{
-    const opening=await callClaude([{role:'user',content:'Start the meeting with a brief greeting and your first question.'}],buildSystem());
+    const sysPrompt=buildSystem();
+    const opening=await callClaude([{role:'user',content:'Begin the meeting now. Greet me briefly and ask your first question.'}],sysPrompt,300);
     simHistory.push({role:'assistant',content:opening});
     addBubble('mgr',opening);simRound=1;
     await speakText(opening);
