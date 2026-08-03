@@ -2,246 +2,766 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Voice Manager Sim</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SpeakUp Pro</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap');
-:root {
-  --bg:#0f0f17;--surface:#18181f;--surface2:#22222c;--border:#2e2e3e;
-  --text:#eeeef5;--soft:#8888aa;--dim:#44445a;
-  --blue:#4f8ef7;--blue-dim:rgba(79,142,247,0.12);
-  --green:#34d399;--green-dim:rgba(52,211,153,0.12);
-  --amber:#fbbf24;--amber-dim:rgba(251,191,36,0.1);
-  --red:#f87171;--red-dim:rgba(248,113,113,0.12);--r:14px;
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0d0d14;--s1:#15151e;--s2:#1c1c27;--s3:#23232f;
+  --b:#2a2a38;--b2:#353548;
+  --text:#f0eff8;--soft:#8888aa;--dim:#44445a;
+  --blue:#5b8dee;--blue-d:rgba(91,141,238,0.15);
+  --green:#2dd4a0;--green-d:rgba(45,212,160,0.12);
+  --amber:#f5a623;--amber-d:rgba(245,166,35,0.12);
+  --red:#f07070;--red-d:rgba(240,112,112,0.12);
+  --purple:#a78bfa;--purple-d:rgba(167,139,250,0.12);
+  --r:12px;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;}
-.screen{display:none;flex-direction:column;min-height:100vh;}
-.screen.active{display:flex;}
-#setupScreen{align-items:center;justify-content:flex-start;padding:28px 20px 40px;overflow-y:auto;}
-.setup-inner{width:100%;max-width:480px;}
-.logo{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;text-align:center;margin-bottom:4px;letter-spacing:-0.5px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;font-size:15px;overflow-x:hidden;}
+.header{background:var(--s1);border-bottom:1px solid var(--b);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;letter-spacing:-0.5px;}
 .logo span{color:var(--blue);}
-.logo-sub{text-align:center;font-size:13px;color:var(--soft);margin-bottom:28px;}
-.setup-label{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--soft);margin-bottom:10px;}
-.opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
-.opt{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;cursor:pointer;text-align:left;transition:all 0.15s;font-family:'Inter',sans-serif;}
-.opt:hover{border-color:var(--blue);}
-.opt.sel{border-color:var(--blue);background:var(--blue-dim);}
-.opt-icon{font-size:20px;margin-bottom:6px;display:block;}
-.opt-name{font-size:13px;font-weight:600;color:var(--text);}
-.opt-desc{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.4;}
-.start-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:var(--r);padding:15px;font-size:15px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;margin-top:4px;}
-.start-btn:hover:not(:disabled){background:#3a7de8;}
-.start-btn:disabled{opacity:0.3;cursor:not-allowed;}
-#convScreen{flex-direction:column;}
-.top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
-.top-mgr{display:flex;align-items:center;gap:10px;}
-.mgr-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-dim);border:1px solid rgba(79,142,247,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;}
-.mgr-info-name{font-size:14px;font-weight:600;color:var(--text);}
-.mgr-info-role{font-size:11px;color:var(--soft);}
-.top-right{display:flex;align-items:center;gap:10px;}
-.top-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--soft);}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
-.status-dot.speaking{animation:pg 1s ease-in-out infinite;}
-.status-dot.listening{background:var(--red);animation:pr 0.7s ease-in-out infinite;}
-.status-dot.idle{background:var(--dim);animation:none;}
-@keyframes pg{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}
-@keyframes pr{0%,100%{opacity:1}50%{opacity:0.5}}
-.end-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--soft);font-size:12px;font-family:'Inter',sans-serif;padding:6px 12px;cursor:pointer;transition:all 0.15s;}
-.end-btn:hover{border-color:var(--red);color:var(--red);}
-.chat-area{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px;max-width:640px;width:100%;margin:0 auto;scroll-behavior:smooth;}
-.msg{display:flex;gap:10px;align-items:flex-start;animation:fadeUp 0.25s ease;}
-.msg.you{flex-direction:row-reverse;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:2px;}
-.msg-avatar.mgr{background:var(--blue-dim);border:1px solid rgba(79,142,247,0.3);}
-.msg-avatar.you{background:var(--surface2);border:1px solid var(--border);}
-.msg-content{max-width:75%;}
-.msg-name{font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
-.msg.you .msg-name{text-align:right;}
-.bubble{border-radius:12px;padding:12px 16px;font-size:14px;line-height:1.6;}
-.bubble.mgr{background:var(--surface);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px;}
-.bubble.you{background:var(--blue-dim);border:1px solid rgba(79,142,247,0.25);color:var(--text);border-top-right-radius:4px;}
-.coaching-chip{margin-top:6px;background:var(--green-dim);border:1px solid rgba(52,211,153,0.25);border-radius:8px;padding:7px 11px;font-size:12px;color:var(--green);line-height:1.5;}
-.coaching-chip.warn{background:var(--amber-dim);border-color:rgba(251,191,36,0.25);color:var(--amber);}
-.typing-bubble{background:var(--surface);border:1px solid var(--border);border-radius:12px;border-top-left-radius:4px;padding:14px 18px;display:flex;gap:5px;align-items:center;}
-.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--soft);animation:tb 1.2s ease-in-out infinite;}
-.typing-dot:nth-child(2){animation-delay:0.2s;}
-.typing-dot:nth-child(3){animation-delay:0.4s;}
-@keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-.mic-zone{flex-shrink:0;border-top:1px solid var(--border);background:var(--surface);padding:16px 20px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;}
-.speaking-indicator{display:none;align-items:center;gap:8px;font-size:12px;color:var(--green);}
-.speaking-indicator.active{display:flex;}
-.speak-wave{display:flex;gap:2px;align-items:center;}
-.speak-bar{width:3px;background:var(--green);border-radius:2px;animation:wb 0.6s ease-in-out infinite;}
-.speak-bar:nth-child(1){height:8px;animation-delay:0s;}
-.speak-bar:nth-child(2){height:14px;animation-delay:0.15s;}
-.speak-bar:nth-child(3){height:10px;animation-delay:0.3s;}
-.speak-bar:nth-child(4){height:14px;animation-delay:0.15s;}
-.speak-bar:nth-child(5){height:8px;animation-delay:0s;}
-.mic-btn{width:72px;height:72px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:28px;transition:all 0.2s;}
-.mic-btn:hover:not(.off){border-color:var(--blue);transform:scale(1.05);}
-.mic-btn.listening{border-color:var(--red);background:var(--red-dim);animation:mp 1.2s ease-in-out infinite;}
-.mic-btn.off{opacity:0.3;cursor:not-allowed;transform:none;}
-@keyframes mp{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,0.3)}50%{box-shadow:0 0 0 14px rgba(248,113,113,0)}}
-.waveform{display:flex;align-items:center;gap:3px;height:20px;opacity:0;transition:opacity 0.2s;}
-.waveform.active{opacity:1;}
-.wave-bar{width:3px;background:var(--red);border-radius:2px;animation:wb 0.8s ease-in-out infinite;}
-.wave-bar:nth-child(1){animation-delay:0s;}
-.wave-bar:nth-child(2){animation-delay:0.1s;}
-.wave-bar:nth-child(3){animation-delay:0.2s;}
-.wave-bar:nth-child(4){animation-delay:0.1s;}
-.wave-bar:nth-child(5){animation-delay:0s;}
-@keyframes wb{0%,100%{height:4px}50%{height:16px}}
-.live-transcript{width:100%;max-width:400px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--soft);font-style:italic;min-height:36px;text-align:center;display:none;}
-.live-transcript.active{display:block;}
-.mic-hint{font-size:12px;color:var(--soft);text-align:center;line-height:1.5;}
-.mic-hint.listening{color:var(--red);}
-#summaryScreen{align-items:center;padding:32px 20px;overflow-y:auto;}
-.summary-inner{width:100%;max-width:520px;}
-.summary-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:4px;}
-.summary-sub{font-size:13px;color:var(--soft);margin-bottom:24px;}
-.score-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
-.score-chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;min-width:76px;}
-.score-num{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;color:var(--blue);line-height:1;}
-.score-num.mid{color:var(--amber);}
-.score-num.low{color:var(--red);}
-.score-lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;}
-.sum-section{margin-bottom:14px;}
-.sum-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:7px;}
-.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:14px;color:var(--soft);line-height:1.6;}
+.streak{background:var(--s2);border:1px solid var(--b);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--amber);}
+.tabs{display:flex;background:var(--s1);border-bottom:1px solid var(--b);overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab-btn{flex:1;min-width:72px;background:none;border:none;color:var(--soft);font-family:'Inter',sans-serif;font-size:11px;font-weight:500;padding:11px 6px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600;}
+.content{max-width:600px;margin:0 auto;padding:18px 14px 100px;}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* PROMPT CARD */
+.prompt-card{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
+.prompt-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,var(--blue),var(--purple));}
+.prompt-tag{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:7px;}
+.prompt-text{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:6px;}
+.prompt-tip{font-size:12px;color:var(--dim);font-style:italic;}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all 0.15s;}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:#4a7de0;}
+.btn-primary:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-ghost{background:var(--s2);color:var(--soft);border:1px solid var(--b);}
+.btn-ghost:hover{color:var(--text);border-color:var(--b2);}
+.btn-sm{padding:7px 12px;font-size:12px;}
+.btn-danger{background:var(--red-d);color:var(--red);border:1px solid rgba(240,112,112,0.3);}
+
+/* MIC */
+.mic-section{text-align:center;padding:20px 0 14px;}
+.mic-outer{width:90px;height:90px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;position:relative;cursor:pointer;border:none;background:none;}
+.mic-ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--b);transition:all 0.3s;}
+.mic-inner{width:68px;height:68px;border-radius:50%;background:var(--s2);border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:26px;transition:all 0.3s;position:relative;z-index:1;}
+.mic-outer.idle .mic-inner:hover{border-color:var(--blue);}
+.mic-outer.recording .mic-ring{border-color:var(--red);animation:rp 1.2s ease-in-out infinite;}
+.mic-outer.recording .mic-inner{background:var(--red-d);border-color:var(--red);}
+@keyframes rp{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:0.5}}
+.mic-status{font-size:12px;color:var(--soft);margin-top:8px;}
+.mic-status.rec{color:var(--red);}
+.mic-status.proc{color:var(--blue);}
+.waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:28px;margin:6px 0;}
+.wv{width:3px;background:var(--red);border-radius:2px;opacity:0;transition:opacity 0.2s;}
+.waveform.active .wv{opacity:1;animation:wva 0.8s ease-in-out infinite;}
+.wv:nth-child(1){animation-delay:0s;height:6px}.wv:nth-child(2){animation-delay:0.1s;height:14px}
+.wv:nth-child(3){animation-delay:0.2s;height:22px}.wv:nth-child(4){animation-delay:0.15s;height:16px}
+.wv:nth-child(5){animation-delay:0.05s;height:8px}.wv:nth-child(6){animation-delay:0.1s;height:18px}
+.wv:nth-child(7){animation-delay:0.2s;height:10px}
+@keyframes wva{0%,100%{transform:scaleY(0.4)}50%{transform:scaleY(1)}}
+
+/* TRANSCRIPT */
+.transcript-box{background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;min-height:64px;}
+.transcript-label{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--dim);margin-bottom:5px;}
+.transcript-text{font-size:14px;color:var(--text);line-height:1.7;}
+.transcript-text.empty{color:var(--dim);font-style:italic;}
+.t-interim{color:var(--soft);}
+
+/* SCORES */
+.score-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.score-box{background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:12px;text-align:center;}
+.score-bar-wrap{height:5px;background:var(--b);border-radius:3px;margin:7px 0 5px;overflow:hidden;}
+.score-bar{height:100%;border-radius:3px;transition:width 1s ease;width:0%;}
+.score-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;line-height:1;}
+.score-lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.4px;margin-top:3px;}
+
+/* FEEDBACK */
+.feedback-card{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:16px;margin-bottom:12px;display:none;}
+.feedback-card.visible{display:block;}
+.fb-title{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--green);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.fb-sec{margin-bottom:14px;}
+.fb-sec-lbl{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--blue);margin-bottom:5px;}
+.fb-text{font-size:13px;color:var(--soft);line-height:1.7;}
+.fb-text strong{color:var(--text);}
+.corr-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--b);font-size:13px;}
+.corr-item:last-child{border-bottom:none;}
+del{color:var(--red);}
+ins{color:var(--green);text-decoration:none;font-weight:500;}
+.power-phrase{background:var(--blue-d);border:1px solid rgba(91,141,238,0.3);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--blue);font-style:italic;margin-top:5px;}
+.tip-box{background:var(--amber-d);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--amber);margin-top:8px;line-height:1.5;}
+.tip-blue{background:var(--blue-d);border:1px solid rgba(91,141,238,0.2);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--blue);margin-top:8px;line-height:1.5;}
+
+/* MANAGER SIM */
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.setup-opt{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:12px;cursor:pointer;text-align:left;transition:all 0.15s;font-family:'Inter',sans-serif;width:100%;}
+.setup-opt:hover{border-color:var(--blue);}
+.setup-opt.sel{border-color:var(--blue);background:var(--blue-d);}
+.setup-opt-icon{font-size:18px;margin-bottom:5px;display:block;}
+.setup-opt-name{font-size:12px;font-weight:600;color:var(--text);}
+.setup-opt-desc{font-size:10px;color:var(--dim);margin-top:2px;line-height:1.4;}
+.setup-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--soft);margin-bottom:8px;}
+
+/* CHAT */
+.chat-area{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:14px;min-height:180px;max-height:320px;overflow-y:auto;margin-bottom:12px;scroll-behavior:smooth;}
+.chat-msg{display:flex;gap:9px;margin-bottom:14px;align-items:flex-start;animation:fadeUp 0.2s ease;}
+.chat-msg.you{flex-direction:row-reverse;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chat-av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;margin-top:2px;}
+.chat-av.mgr{background:var(--blue-d);border:1px solid rgba(91,141,238,0.3);}
+.chat-av.you{background:var(--s2);border:1px solid var(--b);}
+.chat-wrap{max-width:78%;}
+.chat-name{font-size:10px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
+.chat-msg.you .chat-name{text-align:right;}
+.chat-bubble{border-radius:10px;padding:10px 13px;font-size:13px;line-height:1.6;}
+.chat-bubble.mgr{background:var(--s2);border:1px solid var(--b);color:var(--text);border-top-left-radius:3px;}
+.chat-bubble.you{background:var(--blue-d);border:1px solid rgba(91,141,238,0.25);color:var(--text);border-top-right-radius:3px;}
+.coaching-chip{margin-top:5px;background:var(--green-d);border:1px solid rgba(45,212,160,0.25);border-radius:7px;padding:5px 10px;font-size:11px;color:var(--green);line-height:1.5;}
+.coaching-chip.warn{background:var(--amber-d);border-color:rgba(245,166,35,0.25);color:var(--amber);}
+.typing-bubble{background:var(--s2);border:1px solid var(--b);border-radius:10px;border-top-left-radius:3px;padding:12px 16px;display:flex;gap:4px;align-items:center;}
+.tdot{width:5px;height:5px;border-radius:50%;background:var(--soft);animation:td 1.2s ease-in-out infinite;}
+.tdot:nth-child(2){animation-delay:0.2s}.tdot:nth-child(3){animation-delay:0.4s}
+@keyframes td{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* SIM STATUS BAR */
+.sim-bar{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;font-size:12px;}
+.sim-bar-left{display:flex;align-items:center;gap:8px;}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+.sdot.listening{background:var(--red);animation:rp 0.7s ease-in-out infinite;}
+.sdot.speaking{animation:rp 1s ease-in-out infinite;}
+.sdot.idle{background:var(--dim);animation:none;}
+.sim-round{font-family:monospace;color:var(--dim);font-size:11px;}
+
+/* SIM MIC INPUT */
+.sim-input-zone{border-top:1px solid var(--b);background:var(--s1);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;}
+.sim-mic-row{display:flex;align-items:center;gap:12px;}
+.sim-mic-btn{width:56px;height:56px;border-radius:50%;border:2px solid var(--b);background:var(--s2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;transition:all 0.2s;flex-shrink:0;}
+.sim-mic-btn:hover:not(.off){border-color:var(--blue);}
+.sim-mic-btn.recording{border-color:var(--red);background:var(--red-d);animation:rp 1.2s ease-in-out infinite;}
+.sim-mic-btn.off{opacity:0.3;cursor:not-allowed;}
+.sim-mic-info{flex:1;}
+.sim-live{font-size:12px;color:var(--soft);font-style:italic;min-height:18px;}
+.sim-hint{font-size:11px;color:var(--dim);margin-top:3px;}
+
+/* SPEAKING INDICATOR */
+.speaking-ind{display:none;align-items:center;gap:7px;font-size:12px;color:var(--green);padding:6px 0;}
+.speaking-ind.active{display:flex;}
+.spk-wave{display:flex;gap:2px;align-items:center;}
+.spk-bar{width:3px;background:var(--green);border-radius:2px;animation:wva 0.6s ease-in-out infinite;}
+.spk-bar:nth-child(1){height:7px}.spk-bar:nth-child(2){height:13px;animation-delay:0.15s}
+.spk-bar:nth-child(3){height:9px;animation-delay:0.3s}.spk-bar:nth-child(4){height:13px;animation-delay:0.15s}
+.spk-bar:nth-child(5){height:7px}
+
+/* HISTORY */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.stat-box{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:12px;text-align:center;}
+.stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:var(--blue);}
+.stat-lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.4px;margin-top:3px;}
+.hist-item{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;}
+.hist-meta{font-size:11px;color:var(--dim);margin-bottom:5px;}
+.hist-text{font-size:12px;color:var(--soft);line-height:1.5;margin-bottom:7px;}
+.hist-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.hchip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;}
+.hchip.good{background:var(--green-d);color:var(--green);}
+.hchip.mid{background:var(--amber-d);color:var(--amber);}
+.hchip.low{background:var(--red-d);color:var(--red);}
+
+/* SUMMARY */
+.sum-card{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:14px 16px;font-size:13px;color:var(--soft);line-height:1.6;margin-bottom:10px;}
 .sum-card strong{color:var(--text);}
-.tip-card{background:var(--amber-dim);border:1px solid rgba(251,191,36,0.25);border-radius:var(--r);padding:14px 16px;font-size:14px;color:var(--amber);line-height:1.6;}
-.again-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:var(--r);padding:14px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;margin-top:20px;transition:background 0.15s;}
-.again-btn:hover{background:#3a7de8;}
-.spinner-wrap{text-align:center;padding:24px;color:var(--soft);font-size:14px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px;}
-@media(max-width:400px){.opt-grid{grid-template-columns:1fr}}
+
+/* TIPS */
+.tip-card-big{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:15px 16px;margin-bottom:8px;}
+.tip-card-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.tip-card-body{font-size:13px;color:var(--soft);line-height:1.7;}
+.tip-card-body em{color:var(--blue);font-style:normal;font-weight:500;}
+
+/* SPINNER */
+@keyframes sp{to{transform:rotate(360deg)}}
+.spinner{width:15px;height:15px;border:2px solid var(--b);border-top-color:var(--blue);border-radius:50%;animation:sp 0.7s linear infinite;display:inline-block;vertical-align:middle;}
+
+/* SECTION DIVIDER */
+.sec-divider{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--soft);margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--b);}
+
+@media(max-width:360px){.setup-grid{grid-template-columns:1fr}.score-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 
-<div class="screen active" id="setupScreen">
-  <div class="setup-inner" style="margin-top:24px">
-    <div class="logo">Voice <span>Manager</span> Sim</div>
-    <div class="logo-sub">Speak aloud. Your manager replies. Get coached after every answer.</div>
+<div class="header">
+  <div class="logo">Speak<span>Up</span> Pro</div>
+  <div class="streak" id="streakBadge">0 sessions</div>
+</div>
 
-    <div class="setup-label">Choose your manager's style</div>
-    <div class="opt-grid" id="mgrGrid">
-      <button class="opt" onclick="pickMgr(this,'direct')"><span class="opt-icon">⚡</span><div class="opt-name">Direct</div><div class="opt-desc">Short questions, expects crisp answers</div></button>
-      <button class="opt" onclick="pickMgr(this,'analytical')"><span class="opt-icon">📊</span><div class="opt-name">Analytical</div><div class="opt-desc">Always asks "Why?" — wants your reasoning</div></button>
-      <button class="opt" onclick="pickMgr(this,'pressure')"><span class="opt-icon">🔥</span><div class="opt-name">High Pressure</div><div class="opt-desc">Pushes back on every answer</div></button>
-      <button class="opt" onclick="pickMgr(this,'supportive')"><span class="opt-icon">🤝</span><div class="opt-name">Supportive</div><div class="opt-desc">Warm but still expects clear structure</div></button>
-    </div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('practice')">🎯 Practice</button>
+  <button class="tab-btn" onclick="switchTab('free')">🗣 Free Speak</button>
+  <button class="tab-btn" onclick="switchTab('manager')">👔 Manager Sim</button>
+  <button class="tab-btn" onclick="switchTab('history')">📊 History</button>
+  <button class="tab-btn" onclick="switchTab('tips')">💡 Tips</button>
+</div>
 
-    <div class="setup-label">Choose the meeting type</div>
-    <div class="opt-grid" id="ctxGrid">
-      <button class="opt" onclick="pickCtx(this,'weekly')"><span class="opt-icon">📅</span><div class="opt-name">Weekly Check-in</div><div class="opt-desc">Progress, blockers, priorities</div></button>
-      <button class="opt" onclick="pickCtx(this,'problem')"><span class="opt-icon">🚨</span><div class="opt-name">Problem / Incident</div><div class="opt-desc">Something went wrong — explain it</div></button>
-      <button class="opt" onclick="pickCtx(this,'review')"><span class="opt-icon">📈</span><div class="opt-name">Performance Review</div><div class="opt-desc">Your work, growth, and goals</div></button>
-      <button class="opt" onclick="pickCtx(this,'strategy')"><span class="opt-icon">🧭</span><div class="opt-name">Strategy Discussion</div><div class="opt-desc">Your opinions and recommendations</div></button>
-    </div>
+<div class="content">
 
-    <button class="start-btn" id="startBtn" onclick="startSim()" disabled>🎤 Start Voice Simulation</button>
+<!-- ══ PRACTICE TAB ══ -->
+<div class="panel active" id="panel-practice">
+
+  <div class="prompt-card" id="promptCard">
+    <div class="prompt-tag" id="promptTag">Tap New Prompt to begin</div>
+    <div class="prompt-text" id="promptText">Choose a category below or press New Prompt</div>
+    <div class="prompt-tip" id="promptTip"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost btn-sm" onclick="newPrompt('all')">🔀 Random</button>
+    <button class="btn btn-ghost btn-sm" onclick="newPrompt('work')">💼 Work</button>
+    <button class="btn btn-ghost btn-sm" onclick="newPrompt('opinion')">💬 Opinion</button>
+    <button class="btn btn-ghost btn-sm" onclick="newPrompt('story')">📖 Story</button>
+    <button class="btn btn-ghost btn-sm" onclick="newPrompt('describe')">🖼 Describe</button>
+  </div>
+
+  <div class="mic-section">
+    <button class="mic-outer idle" id="pMicBtn" onclick="toggleMic('practice')">
+      <div class="mic-ring"></div>
+      <div class="mic-inner" id="pMicIcon">🎤</div>
+    </button>
+    <div class="waveform" id="pWave"><div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div></div>
+    <div class="mic-status" id="pMicStatus">Tap mic to speak your answer</div>
+  </div>
+
+  <div class="transcript-box">
+    <div class="transcript-label">What you said</div>
+    <div class="transcript-text empty" id="pTranscript">Your words appear here as you speak…</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="pAnalyseBtn" onclick="analysePractice()" disabled>✦ Analyse My Speech</button>
+    <button class="btn btn-ghost" onclick="clearPractice()">Clear</button>
+  </div>
+
+  <div class="score-grid" id="pScoreGrid" style="display:none">
+    <div class="score-box"><div class="score-val" id="psc-pronunciation" style="color:var(--blue)">–</div><div class="score-bar-wrap"><div class="score-bar" id="pbar-pronunciation" style="background:var(--blue)"></div></div><div class="score-lbl">Pronunciation</div></div>
+    <div class="score-box"><div class="score-val" id="psc-clarity" style="color:var(--green)">–</div><div class="score-bar-wrap"><div class="score-bar" id="pbar-clarity" style="background:var(--green)"></div></div><div class="score-lbl">Clarity</div></div>
+    <div class="score-box"><div class="score-val" id="psc-grammar" style="color:var(--purple)">–</div><div class="score-bar-wrap"><div class="score-bar" id="pbar-grammar" style="background:var(--purple)"></div></div><div class="score-lbl">Grammar</div></div>
+    <div class="score-box"><div class="score-val" id="psc-structure" style="color:var(--amber)">–</div><div class="score-bar-wrap"><div class="score-bar" id="pbar-structure" style="background:var(--amber)"></div></div><div class="score-lbl">Structure</div></div>
+  </div>
+
+  <div class="feedback-card" id="pFeedbackCard">
+    <div class="fb-title" id="pFbTitle"></div>
+    <div id="pFbBody"></div>
   </div>
 </div>
 
-<div class="screen" id="convScreen">
-  <div class="top-bar">
-    <div class="top-mgr">
-      <div class="mgr-avatar" id="mgrAvatar">👔</div>
-      <div>
-        <div class="mgr-info-name" id="mgrName">Manager</div>
-        <div class="mgr-info-role" id="mgrRole">Meeting in progress</div>
-      </div>
-    </div>
-    <div class="top-right">
-      <div class="top-status"><div class="status-dot idle" id="statusDot"></div><span id="statusText">Ready</span></div>
-      <button class="end-btn" onclick="endSim()">End →</button>
-    </div>
+<!-- ══ FREE SPEAK TAB ══ -->
+<div class="panel" id="panel-free">
+  <div class="prompt-card" style="background:var(--purple-d);border-color:rgba(167,139,250,0.3)">
+    <div class="prompt-tag" style="color:var(--purple)">Free Speaking Mode</div>
+    <div class="prompt-text" style="font-size:15px">Speak about anything — your day, a story, an opinion, a topic you love. No prompt. Just talk naturally.</div>
+    <div class="prompt-tip">You get full feedback: pronunciation, fluency, grammar, vocabulary and structure.</div>
   </div>
-  <div class="chat-area" id="chatArea"></div>
-  <div class="mic-zone">
-    <div class="speaking-indicator" id="speakingIndicator">
-      <div class="speak-wave"><div class="speak-bar"></div><div class="speak-bar"></div><div class="speak-bar"></div><div class="speak-bar"></div><div class="speak-bar"></div></div>
+
+  <div class="mic-section">
+    <button class="mic-outer idle" id="fMicBtn" onclick="toggleMic('free')">
+      <div class="mic-ring"></div>
+      <div class="mic-inner" id="fMicIcon">🎤</div>
+    </button>
+    <div class="waveform" id="fWave"><div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div></div>
+    <div class="mic-status" id="fMicStatus">Tap mic and speak freely</div>
+  </div>
+
+  <div class="transcript-box">
+    <div class="transcript-label">Your speech</div>
+    <div class="transcript-text empty" id="fTranscript">Speak about anything…</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="fAnalyseBtn" onclick="analyseFree()" disabled>✦ Get Full Feedback</button>
+    <button class="btn btn-ghost" onclick="clearFree()">Clear</button>
+  </div>
+
+  <div class="feedback-card" id="fFeedbackCard">
+    <div class="fb-title" id="fFbTitle"></div>
+    <div id="fFbBody"></div>
+  </div>
+</div>
+
+<!-- ══ MANAGER SIM TAB ══ -->
+<div class="panel" id="panel-manager">
+  <div id="simSetup">
+    <div class="sec-divider">Choose your manager's style</div>
+    <div class="setup-grid" id="mgrGrid">
+      <button class="setup-opt" onclick="pickMgr(this,'direct')"><span class="setup-opt-icon">⚡</span><div class="setup-opt-name">Direct</div><div class="setup-opt-desc">Short sharp questions, expects crisp answers</div></button>
+      <button class="setup-opt" onclick="pickMgr(this,'analytical')"><span class="setup-opt-icon">📊</span><div class="setup-opt-name">Analytical</div><div class="setup-opt-desc">Always asks "Why?" — wants your reasoning</div></button>
+      <button class="setup-opt" onclick="pickMgr(this,'pressure')"><span class="setup-opt-icon">🔥</span><div class="setup-opt-name">High Pressure</div><div class="setup-opt-desc">Challenges every answer you give</div></button>
+      <button class="setup-opt" onclick="pickMgr(this,'supportive')"><span class="setup-opt-icon">🤝</span><div class="setup-opt-name">Supportive</div><div class="setup-opt-desc">Warm but still expects clear structure</div></button>
+    </div>
+
+    <div class="sec-divider">Choose the meeting type</div>
+    <div class="setup-grid" id="ctxGrid">
+      <button class="setup-opt" onclick="pickCtx(this,'weekly')"><span class="setup-opt-icon">📅</span><div class="setup-opt-name">Weekly Check-in</div><div class="setup-opt-desc">Progress, blockers, priorities</div></button>
+      <button class="setup-opt" onclick="pickCtx(this,'problem')"><span class="setup-opt-icon">🚨</span><div class="setup-opt-name">Problem / Incident</div><div class="setup-opt-desc">Something went wrong — explain it</div></button>
+      <button class="setup-opt" onclick="pickCtx(this,'review')"><span class="setup-opt-icon">📈</span><div class="setup-opt-name">Performance Review</div><div class="setup-opt-desc">Your work, growth, and goals</div></button>
+      <button class="setup-opt" onclick="pickCtx(this,'strategy')"><span class="setup-opt-icon">🧭</span><div class="setup-opt-name">Strategy Discussion</div><div class="setup-opt-desc">Your opinions and recommendations</div></button>
+      <button class="setup-opt" onclick="pickCtx(this,'client')"><span class="setup-opt-icon">🤝</span><div class="setup-opt-name">Client Meeting</div><div class="setup-opt-desc">Present, persuade, handle objections</div></button>
+      <button class="setup-opt" onclick="pickCtx(this,'interview')"><span class="setup-opt-icon">💼</span><div class="setup-opt-name">Job Interview</div><div class="setup-opt-desc">Answer tough interview questions</div></button>
+    </div>
+
+    <div class="sec-divider">Choose input mode</div>
+    <div class="setup-grid">
+      <button class="setup-opt" id="modeVoice" onclick="pickMode('voice')"><span class="setup-opt-icon">🎤</span><div class="setup-opt-name">Voice Mode</div><div class="setup-opt-desc">Speak your answers — mic captures speech</div></button>
+      <button class="setup-opt" id="modeType" onclick="pickMode('type')"><span class="setup-opt-icon">⌨️</span><div class="setup-opt-name">Type Mode</div><div class="setup-opt-desc">Type your answers — good for iPhone</div></button>
+    </div>
+
+    <button class="btn btn-primary" id="startSimBtn" onclick="startSim()" disabled style="width:100%;padding:14px;font-size:14px;margin-top:4px">▶ Start Simulation</button>
+  </div>
+
+  <div id="simActive" style="display:none">
+    <div class="sim-bar">
+      <div class="sim-bar-left">
+        <div class="sdot idle" id="simDot"></div>
+        <span id="simStatusTxt">Ready</span>
+      </div>
+      <span class="sim-round" id="simRoundTxt">Round 1</span>
+    </div>
+
+    <div class="chat-area" id="simChat">
+      <div style="text-align:center;padding:20px;color:var(--dim);font-size:13px;font-style:italic" id="simEmpty">Starting session…</div>
+    </div>
+
+    <div class="speaking-ind" id="simSpeakInd">
+      <div class="spk-wave"><div class="spk-bar"></div><div class="spk-bar"></div><div class="spk-bar"></div><div class="spk-bar"></div><div class="spk-bar"></div></div>
       Manager is speaking…
     </div>
-    <button class="mic-btn off" id="micBtn" onclick="toggleMic()">🎤</button>
-    <div class="waveform" id="waveform"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div>
-    <div class="live-transcript" id="liveTranscript"></div>
-    <div class="mic-hint" id="micHint">Wait for the manager to finish…</div>
+
+    <!-- Voice input -->
+    <div class="sim-input-zone" id="simVoiceZone">
+      <div class="sim-mic-row">
+        <button class="sim-mic-btn off" id="simMicBtn" onclick="toggleSimMic()">🎤</button>
+        <div class="sim-mic-info">
+          <div class="sim-live" id="simLive">Wait for manager to finish speaking…</div>
+          <div class="sim-hint">Tap mic to speak your answer</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Type input -->
+    <div class="sim-input-zone" id="simTypeZone" style="display:none">
+      <textarea id="simTypeInput" placeholder="Type your answer here…" style="width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;resize:vertical;min-height:60px;outline:none;" onkeydown="simTypeEnter(event)"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="sendSimType()" style="flex:1">Send →</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost btn-sm" onclick="endSim()">End & See Summary</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetSim()">← Change Setup</button>
+    </div>
+
+    <div id="simSummaryWrap" style="display:none">
+      <div class="sec-divider">Session Summary</div>
+      <div class="score-grid" id="simScoreGrid"></div>
+      <div id="simSummaryBody"></div>
+    </div>
   </div>
 </div>
 
-<div class="screen" id="summaryScreen">
-  <div class="summary-inner">
-    <div class="summary-title">Session Complete</div>
-    <div class="summary-sub" id="summarySubtitle"></div>
-    <div id="summaryContent"><div class="spinner-wrap"><span class="spinner"></span> Analysing your session…</div></div>
-    <button class="again-btn" onclick="goSetup()">🔄 Try Another Simulation</button>
+<!-- ══ HISTORY TAB ══ -->
+<div class="panel" id="panel-history">
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-num" id="hTotalSessions">0</div><div class="stat-lbl">Sessions</div></div>
+    <div class="stat-box"><div class="stat-num" id="hAvgScore">–</div><div class="stat-lbl">Avg Score</div></div>
+    <div class="stat-box"><div class="stat-num" id="hBestScore">–</div><div class="stat-lbl">Best</div></div>
   </div>
+  <div id="historyList"><div style="text-align:center;padding:40px 20px;color:var(--dim);font-size:13px;font-style:italic">Complete practice sessions to see history here.</div></div>
 </div>
+
+<!-- ══ TIPS TAB ══ -->
+<div class="panel" id="panel-tips">
+  <div class="tip-card-big"><div class="tip-card-title">🗣 Speak more clearly — slow down</div><div class="tip-card-body">Most non-native speakers speak too fast when nervous. Aim for <em>120–140 words per minute</em>. Pause at commas and full stops. Silence is not awkward — it signals confidence.</div></div>
+  <div class="tip-card-big"><div class="tip-card-title">🔊 3 most common pronunciation mistakes</div><div class="tip-card-body">1. <em>Final consonants</em> — say the last sound clearly. "Wan<strong>t</strong>", not "wan".<br>2. <em>TH sound</em> — "think" not "tink". Touch tongue to upper teeth.<br>3. <em>Word stress</em> — "preSENT" (verb) vs "PREsent" (noun). Stress changes meaning.</div></div>
+  <div class="tip-card-big"><div class="tip-card-title">🎯 Stop talking in circles</div><div class="tip-card-body">Your conclusion must be your FIRST sentence. Say <em>"My recommendation is X"</em> before you explain anything. If your conclusion is not in your first sentence, you are already circling.</div></div>
+  <div class="tip-card-big"><div class="tip-card-title">📢 5 frameworks — use them every day</div><div class="tip-card-body"><em>PREP</em> — Point, Reason, Example, Point (opinions)<br><em>SBA</em> — Situation, Background, Action (updates)<br><em>PPP</em> — Problem, Proof, Proposal (presentations)<br><em>CLR</em> — Conclusion, Logic, Result (any question)<br><em>Buy Time</em> — Repeat, Rephrase, Bridge (when you freeze)</div></div>
+  <div class="tip-card-big"><div class="tip-card-title">💪 6 power phrases to memorise</div><div class="tip-card-body"><em>"My recommendation is…"</em><br><em>"The bottom line is…"</em><br><em>"To directly answer your question…"</em><br><em>"What I can tell you is…"</em><br><em>"Let me rephrase that to be more precise."</em><br><em>"I'd like to offer a different perspective."</em></div></div>
+  <div class="tip-card-big"><div class="tip-card-title">🔑 Replace weak words</div><div class="tip-card-body"><em>"I think maybe"</em> → <em>"I recommend"</em><br><em>"kind of good"</em> → <em>"effective"</em><br><em>"not sure but"</em> → <em>"Based on what I know,"</em><br><em>"we should do something"</em> → <em>"I propose we [action]"</em></div></div>
+  <div class="tip-card-big"><div class="tip-card-title">📅 Daily habit (10 minutes)</div><div class="tip-card-body">1 Practice session + 1 Manager Sim every morning before work. <em>3 weeks</em> of this and your brain restructures how it forms sentences automatically. Consistency beats intensity every time.</div></div>
+</div>
+
+</div><!-- end content -->
 
 <script>
-const MGR = {
-  direct:    {name:'Alex Chen',   role:'Senior Manager',   emoji:'⚡',vRate:1.05,vPitch:1.0, system:'You are Alex Chen, a direct demanding manager. Ask short pointed questions one at a time. Expect conclusion-first answers. If someone rambles say "Get to the point." Keep replies 1-3 sentences.'},
-  analytical:{name:'Dr. Wei',     role:'Head of Analytics',emoji:'📊',vRate:0.98,vPitch:0.95,system:'You are Dr. Wei, analytical manager. Always probe with "Why?" after each answer. Want reasoning not just conclusions. Calm but demanding. Keep replies 1-3 sentences.'},
-  pressure:  {name:'Marcus Reid', role:'VP Operations',    emoji:'🔥',vRate:1.08,vPitch:0.9, system:'You are Marcus Reid, high-pressure VP. Challenge every answer: "I\'m not convinced." Acknowledge strong answers briefly then push further. Keep replies 1-3 sentences.'},
-  supportive:{name:'Sarah Lim',   role:'Team Lead',        emoji:'🤝',vRate:1.0, vPitch:1.05,system:'You are Sarah Lim, supportive manager. Warm but expect clear structured answers. If someone rambles redirect: "Can you give the short version?" Keep replies 1-3 sentences.'}
-};
-const CTX = {
-  weekly:  'Weekly check-in: ask about progress, blockers, priorities for next week.',
-  problem: 'Something went wrong. Ask what happened, why, and the fix plan.',
-  review:  'Performance review: ask about achievements, struggles, development goals.',
-  strategy:'Strategy discussion: ask for opinions, recommendations, trade-off thinking.'
+// ══ PROMPTS — 25+ per category ══
+const PROMPTS = {
+  work: [
+    {tag:'Work · Update',text:'Your manager asks: "What did you accomplish this week?"',tip:'Use SBA: Situation → Background → Action'},
+    {tag:'Work · Problem',text:'"Why did the project take longer than expected?" — answer your manager.',tip:'Lead with your conclusion first. State facts, not excuses.'},
+    {tag:'Work · Opinion',text:'Do you think remote work is better than working in the office?',tip:'PREP: State your view → Reason → Example → Restate'},
+    {tag:'Work · Pitch',text:'Pitch one idea that would improve your team\'s productivity.',tip:'PPP: Problem → Proof → Proposal'},
+    {tag:'Work · Priority',text:'"What are your main priorities for next week?" — answer your manager.',tip:'Name 2-3 things with brief reasons for each.'},
+    {tag:'Work · Feedback',text:'Give constructive feedback to a colleague about their presentation.',tip:'Start positive, then specific improvement, then encouragement.'},
+    {tag:'Work · Decision',text:'Should your company invest in a new software tool? Make the case.',tip:'Lead with your recommendation, then give evidence.'},
+    {tag:'Work · Conflict',text:'Two team members disagree on the approach. How do you resolve it?',tip:'Acknowledge both views, then propose a clear solution.'},
+    {tag:'Work · Update',text:'"Can you update us on the client situation?" — speak for 60 seconds.',tip:'SBA: What is happening now → why → what you\'re doing'},
+    {tag:'Work · Opinion',text:'Should companies allow employees to work 4 days a week?',tip:'Give your view in the first sentence, then support it.'},
+    {tag:'Work · Explain',text:'Explain to a new team member how your team works.',tip:'Use clear structure: first... then... finally...'},
+    {tag:'Work · Difficult',text:'"I\'m not happy with the results. What went wrong?" — respond.',tip:'Be honest, take ownership, and end with your solution.'},
+    {tag:'Work · Strategy',text:'What is one change that would have the biggest impact on your results?',tip:'CLR: Conclusion → Logic → Result'},
+    {tag:'Work · Persuade',text:'Convince your manager to give your team a bigger budget.',tip:'PPP: Show the problem, prove it with data, propose the solution.'},
+    {tag:'Work · Reflect',text:'What has been your biggest professional achievement this year?',tip:'Be specific — name the result and your exact contribution.'},
+    {tag:'Work · Risk',text:'What are the main risks of launching this product now?',tip:'Name 2-3 risks clearly, then suggest how to manage each.'},
+    {tag:'Work · Meeting',text:'"Can you summarise what was discussed?" — give the meeting recap.',tip:'Hit the key decisions and action items. Be concise.'},
+    {tag:'Work · Disagree',text:'You disagree with your manager\'s decision. How do you raise it?',tip:'"I see your point, however…" — respectful but clear.'},
+    {tag:'Work · Goal',text:'What is your main professional goal for the next 6 months?',tip:'Be specific. What exactly will you achieve and how?'},
+    {tag:'Work · Onboard',text:'A new colleague joins your team. Welcome them and explain what the team does.',tip:'Keep it clear, friendly, and give them one key thing to know.'},
+    {tag:'Work · Cross-team',text:'How would you describe your department\'s role to another team?',tip:'Avoid jargon. One clear sentence on what you do and why it matters.'},
+    {tag:'Work · Pressure',text:'"We need this done by tomorrow. Can you do it?" — respond honestly.',tip:'Be direct: yes/no, then the condition or plan.'},
+    {tag:'Work · Recognition',text:'Your manager asks why you deserve a promotion. What do you say?',tip:'Lead with impact, then evidence, then future value.'},
+    {tag:'Work · Process',text:'Explain a process you follow at work that others could learn from.',tip:'Step by step — clear, specific, and brief.'},
+    {tag:'Work · Lesson',text:'What is the most important lesson you have learned from a failure at work?',tip:'Describe the failure briefly, then focus on what you learned.'},
+  ],
+  opinion: [
+    {tag:'Opinion',text:'Is technology making us more productive or more distracted?',tip:'Choose one side and defend it clearly with an example.'},
+    {tag:'Opinion',text:'Should social media have a minimum age limit of 18?',tip:'State your position first, then give your strongest reason.'},
+    {tag:'Opinion',text:'Is money the most important factor when choosing a job?',tip:'Acknowledge the other side before giving your clear view.'},
+    {tag:'Opinion',text:'Do you think university degrees are still worth it today?',tip:'Use a specific example to support your argument.'},
+    {tag:'Opinion',text:'Should people work to live, or live to work?',tip:'This is a values question — be honest about what you believe.'},
+    {tag:'Opinion',text:'Is it better to have one close friend or many casual friends?',tip:'Give a concrete reason, then an example from life.'},
+    {tag:'Opinion',text:'Do you think artificial intelligence will take away most jobs?',tip:'Pick a position and give one strong argument for it.'},
+    {tag:'Opinion',text:'Should governments ban single-use plastics completely?',tip:'State your view, give evidence, acknowledge the trade-off.'},
+    {tag:'Opinion',text:'Is social media more helpful or harmful for young people?',tip:'Be specific — give one clear example on each side then your verdict.'},
+    {tag:'Opinion',text:'Should people be allowed to work from home permanently?',tip:'Consider both employer and employee perspective before concluding.'},
+    {tag:'Opinion',text:'Is it possible to be truly successful without sacrificing family time?',tip:'Give your honest personal view with a reason.'},
+    {tag:'Opinion',text:'Do you think leaders are born or made?',tip:'Support your answer with a real example if possible.'},
+    {tag:'Opinion',text:'Should animals be used for scientific testing?',tip:'Acknowledge complexity but still give a clear final position.'},
+    {tag:'Opinion',text:'Is competition healthy or harmful in education?',tip:'Think about your own school experience as an example.'},
+    {tag:'Opinion',text:'Should rich countries do more to help developing nations?',tip:'Be specific about what "more" means before giving your view.'},
+    {tag:'Opinion',text:'Is fast food a bigger public health problem than smoking?',tip:'Compare and contrast, then give your verdict.'},
+    {tag:'Opinion',text:'Do you think men and women lead differently? Should they?',tip:'Focus on behaviour you have observed, not stereotypes.'},
+    {tag:'Opinion',text:'Is it ethical for companies to collect data on their employees?',tip:'Define what kind of data first, then give your position.'},
+    {tag:'Opinion',text:'Should voting be made compulsory?',tip:'Consider freedom vs civic responsibility in your answer.'},
+    {tag:'Opinion',text:'Is patience the most important quality for success in life?',tip:'Agree or disagree — then name what you think matters more if you disagree.'},
+    {tag:'Opinion',text:'Do you think people read enough in the digital age?',tip:'Talk about the impact of not reading, then your view.'},
+    {tag:'Opinion',text:'Should companies be legally required to have gender-balanced boards?',tip:'State your view and the strongest argument against it.'},
+    {tag:'Opinion',text:'Is it ever acceptable to lie at work?',tip:'Be specific about what kind of situation you mean.'},
+    {tag:'Opinion',text:'Should retirement age be raised to 70?',tip:'Consider different types of work before giving your verdict.'},
+    {tag:'Opinion',text:'Do you think remote work has hurt workplace culture?',tip:'Use a specific example or observation to support your view.'},
+  ],
+  story: [
+    {tag:'Storytelling',text:'Tell me about a time you made a mistake and what you learned.',tip:'Set the scene → what happened → what you learned → how you changed.'},
+    {tag:'Storytelling',text:'Describe a moment when you felt really proud of yourself.',tip:'Be specific about what you did and why it mattered to you.'},
+    {tag:'Storytelling',text:'Talk about a person who influenced your life significantly.',tip:'Describe who they were → what they did → the specific impact on you.'},
+    {tag:'Storytelling',text:'Tell me about a time you had to make a very difficult decision.',tip:'What were the options? What did you choose? What happened next?'},
+    {tag:'Storytelling',text:'Describe a memorable trip or experience that changed how you see things.',tip:'Set the scene, describe what happened, then the insight you gained.'},
+    {tag:'Storytelling',text:'Talk about a skill you taught yourself. How did you do it?',tip:'Show progress: "At first… then… eventually…"'},
+    {tag:'Storytelling',text:'Describe a time when you had to work with someone very difficult.',tip:'Focus on what you did, not on criticising the other person.'},
+    {tag:'Storytelling',text:'Tell me about a moment when you stepped outside your comfort zone.',tip:'What scared you → what you did → how you felt after.'},
+    {tag:'Storytelling',text:'Talk about a failure that turned out to be a good thing in the end.',tip:'Be honest about the failure first, then the unexpected positive.'},
+    {tag:'Storytelling',text:'Describe the best advice you ever received and why it helped.',tip:'Give context for when you heard it and a specific example of using it.'},
+    {tag:'Storytelling',text:'Tell me about a time you had to adapt quickly to a big change.',tip:'What changed → your first reaction → how you adapted → result.'},
+    {tag:'Storytelling',text:'Talk about a moment when you had to show leadership.',tip:'Describe what was happening and the specific thing you did.'},
+    {tag:'Storytelling',text:'Describe a time when you helped someone when it was not easy.',tip:'Focus on your motivation and what you actually did.'},
+    {tag:'Storytelling',text:'Tell me about something you worked hard on for a long time.',tip:'Explain the goal, the journey, and the final result.'},
+    {tag:'Storytelling',text:'Talk about a childhood memory that still influences you today.',tip:'Describe the memory vividly, then connect it to your life now.'},
+    {tag:'Storytelling',text:'Describe a time you disagreed with someone and how you handled it.',tip:'Focus on the conversation and how it resolved, not who was right.'},
+    {tag:'Storytelling',text:'Tell me about a time you received feedback that was hard to hear.',tip:'How did you react at first? What did you do with it?'},
+    {tag:'Storytelling',text:'Talk about something you changed your mind about and why.',tip:'What did you used to believe? What changed it?'},
+    {tag:'Storytelling',text:'Describe an experience where language or communication was a barrier.',tip:'How did you feel? How did you overcome it?'},
+    {tag:'Storytelling',text:'Tell me about a time you had to persuade someone who was resistant.',tip:'What approach did you use? What worked?'},
+    {tag:'Storytelling',text:'Talk about a project you are genuinely proud of.',tip:'What made it good? What was your specific contribution?'},
+    {tag:'Storytelling',text:'Describe a time you had to give bad news to someone.',tip:'How did you prepare? How did you say it? What happened next?'},
+    {tag:'Storytelling',text:'Tell me about a moment when you realised something important about yourself.',tip:'Be honest and reflective — this is about self-awareness.'},
+    {tag:'Storytelling',text:'Talk about a time you had too much to do and not enough time.',tip:'What did you prioritise? What did you let go? What was the result?'},
+    {tag:'Storytelling',text:'Describe an experience that made you more resilient.',tip:'What was the difficulty and what specifically made you stronger?'},
+  ],
+  describe: [
+    {tag:'Description',text:'Describe your ideal workplace environment in detail.',tip:'Think about: space, people, culture, pace, values.'},
+    {tag:'Description',text:'Describe your hometown to someone who has never visited.',tip:'Sights, sounds, food, the feeling — make it vivid.'},
+    {tag:'Description',text:'Describe someone you admire and what makes them special.',tip:'Focus on specific qualities and give a concrete example.'},
+    {tag:'Description',text:'Describe your perfect day from morning to night.',tip:'Be specific and personal — not a generic answer.'},
+    {tag:'Description',text:'Describe the best meal you have ever had.',tip:'Where was it, what was it, who were you with, why was it special?'},
+    {tag:'Description',text:'Describe a place that feels like home to you — real or imaginary.',tip:'Use sensory details: what you see, hear, smell, feel.'},
+    {tag:'Description',text:'Describe your daily routine and what you would change about it.',tip:'Walk through your day, then give one honest thing you\'d improve.'},
+    {tag:'Description',text:'Describe the most interesting person you have ever met.',tip:'What made them interesting? Give a specific story about them.'},
+    {tag:'Description',text:'Describe your ideal city to live in.',tip:'Think: transport, culture, food, size, weather, community.'},
+    {tag:'Description',text:'Describe a book, film, or show that stayed with you.',tip:'What was it about? Why did it affect you? Would you recommend it?'},
+    {tag:'Description',text:'Describe your biggest strength and how it shows up in your life.',tip:'Give a specific real example, not just a generic statement.'},
+    {tag:'Description',text:'Describe the kind of leader you aspire to be.',tip:'Be specific — name the qualities and why they matter to you.'},
+    {tag:'Description',text:'Describe a tradition from your culture that you value.',tip:'Explain what it is, then why it matters to you personally.'},
+    {tag:'Description',text:'Describe how your life is different now compared to 5 years ago.',tip:'Pick 2-3 specific things that have changed.'},
+    {tag:'Description',text:'Describe what success means to you personally.',tip:'Be honest — your definition, not society\'s definition.'},
+    {tag:'Description',text:'Describe a hobby or interest that most people don\'t know you have.',tip:'What is it, how did you start, what do you love about it?'},
+    {tag:'Description',text:'Describe the most beautiful thing you have ever seen in nature.',tip:'Use vivid sensory language — make the listener feel they are there.'},
+    {tag:'Description',text:'Describe your communication style and how it affects your relationships.',tip:'Be honest about your strengths and one area you\'re working on.'},
+    {tag:'Description',text:'Describe what a typical weekend looks like for you.',tip:'Be specific and natural — let your personality come through.'},
+    {tag:'Description',text:'Describe an object that is important to you and why.',tip:'What is it? Where did it come from? What does it mean to you?'},
+    {tag:'Description',text:'Describe the qualities of a great friend.',tip:'Give specific qualities and explain why each one matters.'},
+    {tag:'Description',text:'Describe your neighbourhood and what you like and dislike about it.',tip:'Be specific — give a vivid picture of the area.'},
+    {tag:'Description',text:'Describe what you think the world will look like in 20 years.',tip:'Pick one or two big changes and describe them in detail.'},
+    {tag:'Description',text:'Describe your learning style — how do you best absorb new information?',tip:'Give a specific example of when this worked well for you.'},
+    {tag:'Description',text:'Describe the role that family plays in your life.',tip:'Be personal and specific, not generic.'},
+  ],
 };
 
-let chosenMgr=null,chosenCtx=null;
-let simHistory=[],simScores=[],simRound=0,sessionEnded=false;
-let recognition=null,isListening=false,micFinal='';
+// ══ MANAGER SIM DATA ══
+const MGR = {
+  direct:{name:'Alex Chen',role:'Senior Manager',emoji:'⚡',vRate:1.05,vPitch:1.0,system:'You are Alex Chen, a direct and demanding manager. Ask ONE short pointed question at a time. Expect conclusion-first structured answers. If someone rambles say "Can you get to the point?" Keep your replies to 1-3 sentences.'},
+  analytical:{name:'Dr. Wei',role:'Head of Analytics',emoji:'📊',vRate:0.98,vPitch:0.95,system:'You are Dr. Wei, an analytical manager. After each answer probe with "Why?" or "How do you know that?" Want reasoning not just conclusions. Calm but demanding. Keep replies 1-3 sentences.'},
+  pressure:{name:'Marcus Reid',role:'VP Operations',emoji:'🔥',vRate:1.08,vPitch:0.9,system:'You are Marcus Reid, high-pressure VP. Challenge every answer: "I\'m not convinced", "Give me something stronger." Acknowledge genuinely strong answers briefly then push further. Keep replies 1-3 sentences.'},
+  supportive:{name:'Sarah Lim',role:'Team Lead',emoji:'🤝',vRate:1.0,vPitch:1.05,system:'You are Sarah Lim, supportive manager. Warm but still expect clear structured answers. If someone rambles gently redirect: "Can you give me the short version?" Keep replies 1-3 sentences.'}
+};
+
+const CTX = {
+  weekly:'Weekly check-in: ask about progress on tasks, blockers, and priorities for next week.',
+  problem:'A project issue or client complaint just happened. Ask what went wrong, why, and the fix plan.',
+  review:'Performance review: ask about achievements this quarter, struggles, and development goals.',
+  strategy:'Strategy discussion: ask for opinions on direction, recommendations, and trade-off thinking.',
+  client:'Client meeting: ask how to handle a difficult client, how to pitch, or how to manage expectations.',
+  interview:'Job interview: ask classic interview questions — strengths, weaknesses, achievements, goals.'
+};
+
+// ══ STATE ══
+let currentPrompt = null;
+let pFinal='', fFinal='', pInterim='', fInterim='';
+let isRecording=false, recognition=null, activeMode=null;
+let simHistory=[], simScores=[], simRound=0, sessionEnded=false;
+let chosenMgr=null, chosenCtx=null, chosenInputMode='voice';
+let simRecognition=null, simIsRecording=false, simFinal='';
+let totalSessions=0, allScores=[];
 const synth=window.speechSynthesis;
 const SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
 
-function pickMgr(btn,key){document.querySelectorAll('#mgrGrid .opt').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');chosenMgr=key;checkReady();}
-function pickCtx(btn,key){document.querySelectorAll('#ctxGrid .opt').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');chosenCtx=key;checkReady();}
-function checkReady(){document.getElementById('startBtn').disabled=!(chosenMgr&&chosenCtx);}
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+// ══ TABS ══
+function switchTab(id){
+  stopAllRecording();
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
 
-async function callClaude(messages,system,maxTokens=350){
-  const body={model:'claude-sonnet-4-6',max_tokens:maxTokens,messages};
-  if(system)body.system=system;
+// ══ PROMPTS ══
+function newPrompt(cat){
+  cat = cat||'all';
+  let pool;
+  if(cat==='all') pool=[...PROMPTS.work,...PROMPTS.opinion,...PROMPTS.story,...PROMPTS.describe];
+  else pool=PROMPTS[cat]||PROMPTS.work;
+  currentPrompt=pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById('promptTag').textContent=currentPrompt.tag;
+  document.getElementById('promptText').textContent=currentPrompt.text;
+  document.getElementById('promptTip').textContent='💡 '+currentPrompt.tip;
+  clearPractice();
+  document.getElementById('pFeedbackCard').className='feedback-card';
+  document.getElementById('pScoreGrid').style.display='none';
+}
+
+// ══ RECORDING ══
+function stopAllRecording(){
+  if(isRecording&&recognition){recognition.onend=null;recognition.stop();recognition=null;isRecording=false;}
+  if(simIsRecording&&simRecognition){simRecognition.onend=null;simRecognition.stop();simRecognition=null;simIsRecording=false;}
+  setMicUI('practice','idle');setMicUI('free','idle');
+  synth.cancel();
+}
+
+function toggleMic(mode){
+  if(isRecording&&activeMode===mode){stopPracticeRec();return;}
+  stopAllRecording();
+  startPracticeRec(mode);
+}
+
+function startPracticeRec(mode){
+  if(!SpeechRec){alert('Voice recognition requires Chrome browser.');return;}
+  activeMode=mode;
+  if(mode==='practice'){pFinal='';pInterim='';}
+  else{fFinal='';fInterim='';}
+  recognition=new SpeechRec();
+  recognition.continuous=true;recognition.interimResults=true;recognition.lang='en-US';recognition.maxAlternatives=1;
+  recognition.onstart=()=>{isRecording=true;setMicUI(mode,'recording');};
+  recognition.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal){if(mode==='practice')pFinal+=e.results[i][0].transcript+' ';else fFinal+=e.results[i][0].transcript+' ';}
+      else interim+=e.results[i][0].transcript;
+    }
+    if(mode==='practice'){pInterim=interim;updateTranscript('practice');}
+    else{fInterim=interim;updateTranscript('free');}
+  };
+  recognition.onerror=e=>{if(e.error==='not-allowed')alert('Microphone access denied. Please allow mic in browser settings.');stopPracticeRec();};
+  recognition.onend=()=>{if(isRecording){try{recognition.start();}catch(e){stopPracticeRec();}}};
+  try{recognition.start();}catch(e){alert('Could not start mic: '+e.message);}
+}
+
+function stopPracticeRec(){
+  isRecording=false;
+  if(recognition){recognition.onend=null;recognition.stop();recognition=null;}
+  setMicUI(activeMode,'idle');
+  const mode=activeMode;
+  setTimeout(()=>{
+    const text=(mode==='practice'?pFinal:fFinal).trim();
+    if(text){
+      const el=document.getElementById(mode==='practice'?'pTranscript':'fTranscript');
+      el.textContent=text;el.classList.remove('empty');
+      document.getElementById(mode==='practice'?'pAnalyseBtn':'fAnalyseBtn').disabled=false;
+    }
+  },300);
+}
+
+function updateTranscript(mode){
+  const final=mode==='practice'?pFinal:fFinal;
+  const interim=mode==='practice'?pInterim:fInterim;
+  const el=document.getElementById(mode==='practice'?'pTranscript':'fTranscript');
+  if((final+interim).trim()){
+    el.innerHTML=final+(interim?` <span class="t-interim">${interim}</span>`:'');
+    el.classList.remove('empty');
+    document.getElementById(mode==='practice'?'pAnalyseBtn':'fAnalyseBtn').disabled=false;
+  }
+}
+
+function setMicUI(mode,state){
+  const isP=mode==='practice';
+  const btn=document.getElementById(isP?'pMicBtn':'fMicBtn');
+  const icon=document.getElementById(isP?'pMicIcon':'fMicIcon');
+  const status=document.getElementById(isP?'pMicStatus':'fMicStatus');
+  const wave=document.getElementById(isP?'pWave':'fWave');
+  if(!btn)return;
+  btn.className='mic-outer '+state;
+  if(state==='recording'){icon.textContent='⏹';status.textContent='Recording… tap ⏹ to stop';status.className='mic-status rec';wave.classList.add('active');}
+  else{icon.textContent='🎤';status.textContent=isP?'Tap mic to speak your answer':'Tap mic and speak freely';status.className='mic-status';wave.classList.remove('active');}
+}
+
+function clearPractice(){pFinal='';pInterim='';stopPracticeRec();const el=document.getElementById('pTranscript');el.textContent='Your words appear here as you speak…';el.classList.add('empty');document.getElementById('pAnalyseBtn').disabled=true;}
+function clearFree(){fFinal='';fInterim='';stopPracticeRec();const el=document.getElementById('fTranscript');el.textContent='Speak about anything…';el.classList.add('empty');document.getElementById('fAnalyseBtn').disabled=true;document.getElementById('fFeedbackCard').className='feedback-card';}
+
+// ══ API ══
+async function callClaude(prompt,maxTokens=1000){
   const res=await fetch('/api/claude',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(body)
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})
   });
   if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||'API error '+res.status);}
   const data=await res.json();
   return data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
 }
 
-function buildSystem(){
-  return `${MGR[chosenMgr].system}\nMeeting context: ${CTX[chosenCtx]}\nRULES: Ask ONE question per turn. Reply briefly in character 1-3 sentences then ask next question. After 5-6 exchanges wrap up with a closing remark. Stay in character as ${MGR[chosenMgr].name}.`;
+async function callClaudeMsgs(messages,system,maxTokens=400){
+  const body={model:'claude-sonnet-4-6',max_tokens:maxTokens,messages};
+  if(system)body.system=system;
+  const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||'API error '+res.status);}
+  const data=await res.json();
+  return data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+}
+
+// ══ ANALYSE PRACTICE ══
+async function analysePractice(){
+  const text=(pFinal.trim()||document.getElementById('pTranscript').textContent.trim());
+  if(!text||text.includes('appear here'))return;
+  stopPracticeRec();
+  document.getElementById('pAnalyseBtn').disabled=true;
+  const card=document.getElementById('pFeedbackCard');
+  const title=document.getElementById('pFbTitle');
+  const body=document.getElementById('pFbBody');
+  card.className='feedback-card visible';
+  title.innerHTML='<span class="spinner"></span> Analysing your speech…';
+  body.innerHTML='';
+  document.getElementById('pScoreGrid').style.display='none';
+  const prompt=currentPrompt?currentPrompt.text:'General speaking practice';
+  try{
+    const raw=await callClaude(`You are an expert English speech and communication coach for non-native speakers. Analyse this spoken response.
+
+Prompt: "${prompt}"
+Their response: "${text}"
+
+Reply in JSON only (no markdown):
+{"scores":{"pronunciation":7,"clarity":7,"grammar":8,"structure":7,"vocabulary":7,"confidence":7},"overall":7,"pronunciation_notes":"Specific words that non-native speakers often mispronounce in this text — give phonetic tips","clarity_notes":"Was the message clear? Did they get to the point? Any circling?","well":["specific strength 1","specific strength 2"],"corrections":[{"original":"exact phrase","better":"improved version","reason":"brief why"}],"vocabulary_upgrade":[{"used":"weak word","better":"stronger word","example":"sentence using it"}],"power_phrase":"One natural professional phrase for this context","structure_tip":"One specific structure tip — max 20 words","pronunciation_drill":"One specific sound or word to practise with phonetic guide"}`);
+    const p=JSON.parse(raw.trim());
+    const s=p.scores;
+    document.getElementById('pScoreGrid').style.display='grid';
+    [['pronunciation',s.pronunciation,'var(--blue)'],['clarity',s.clarity,'var(--green)'],['grammar',s.grammar,'var(--purple)'],['structure',s.structure,'var(--amber)']].forEach(([k,v,c])=>{
+      document.getElementById('psc-'+k).textContent=v+'/10';
+      document.getElementById('psc-'+k).style.color=c;
+      setTimeout(()=>{document.getElementById('pbar-'+k).style.width=(v*10)+'%';},100);
+    });
+    title.innerHTML=`✦ Speech Analysis — Overall: <span style="color:var(--blue)">${p.overall}/10</span>`;
+    let html='';
+    html+=`<div class="fb-sec"><div class="fb-sec-lbl">What you did well</div><div class="fb-text">${p.well.map(w=>`✓ <strong>${w}</strong>`).join('<br>')}</div></div>`;
+    if(p.pronunciation_notes)html+=`<div class="fb-sec"><div class="fb-sec-lbl">🗣 Pronunciation & Clarity</div><div class="fb-text">${p.pronunciation_notes}</div>${p.pronunciation_drill?`<div class="tip-box">🔊 Drill: ${p.pronunciation_drill}</div>`:''}</div>`;
+    if(p.corrections&&p.corrections.length)html+=`<div class="fb-sec"><div class="fb-sec-lbl">✏️ Grammar Corrections</div><div class="fb-text">${p.corrections.map(c=>`<div class="corr-item"><span>→</span><div><del>"${c.original}"</del> → <ins>"${c.better}"</ins><br><span style="font-size:11px;color:var(--dim)">${c.reason}</span></div></div>`).join('')}</div></div>`;
+    if(p.vocabulary_upgrade&&p.vocabulary_upgrade.length)html+=`<div class="fb-sec"><div class="fb-sec-lbl">📚 Vocabulary</div><div class="fb-text">${p.vocabulary_upgrade.map(v=>`<div class="corr-item"><span>→</span><div><del>"${v.used}"</del> → <ins>"${v.better}"</ins><br><span style="font-size:11px;color:var(--dim);font-style:italic">${v.example}</span></div></div>`).join('')}</div></div>`;
+    if(p.clarity_notes)html+=`<div class="fb-sec"><div class="fb-sec-lbl">💡 Clarity</div><div class="fb-text">${p.clarity_notes}</div></div>`;
+    if(p.power_phrase)html+=`<div class="fb-sec"><div class="fb-sec-lbl">⚡ Power Phrase</div><div class="power-phrase">"${p.power_phrase}"</div></div>`;
+    if(p.structure_tip)html+=`<div class="tip-box">📌 Next time: ${p.structure_tip}</div>`;
+    body.innerHTML=html;
+    saveHistory(text,p,prompt);
+  }catch(e){title.innerHTML='⚠ Error';body.innerHTML=`<div class="fb-text" style="color:var(--red)">${e.message}</div>`;document.getElementById('pAnalyseBtn').disabled=false;}
+}
+
+// ══ ANALYSE FREE ══
+async function analyseFree(){
+  const text=(fFinal.trim()||document.getElementById('fTranscript').textContent.trim());
+  if(!text||text.includes('Speak about'))return;
+  stopPracticeRec();
+  document.getElementById('fAnalyseBtn').disabled=true;
+  const card=document.getElementById('fFeedbackCard');
+  const title=document.getElementById('fFbTitle');
+  const body=document.getElementById('fFbBody');
+  card.className='feedback-card visible';
+  title.innerHTML='<span class="spinner"></span> Analysing…';
+  body.innerHTML='';
+  try{
+    const raw=await callClaude(`Expert English speech coach. Person spoke freely.\n\nWhat they said: "${text}"\n\nJSON only no markdown:\n{"overall":7,"scores":{"pronunciation":7,"fluency":7,"grammar":8,"vocabulary":7,"structure":6},"topic_detected":"what they talked about","well":["strength 1","strength 2"],"corrections":[{"original":"phrase","better":"improved","reason":"why"}],"vocabulary_upgrade":[{"used":"weak","better":"strong"}],"fluency_notes":"Observations about fluency, pace, filler words","pronunciation_focus":"One sound or word pattern to practise with phonetic tips","one_big_tip":"Single most impactful improvement — max 25 words"}`);
+    const p=JSON.parse(raw.trim());
+    title.innerHTML=`✦ Free Speech — Overall: <span style="color:var(--blue)">${p.overall}/10</span>`;
+    let html=`<div class="fb-sec"><div class="fb-sec-lbl">Topic</div><div class="fb-text"><strong>${p.topic_detected}</strong></div></div>`;
+    html+=`<div class="fb-sec"><div class="fb-sec-lbl">Strengths</div><div class="fb-text">${p.well.map(w=>`✓ <strong>${w}</strong>`).join('<br>')}</div></div>`;
+    if(p.fluency_notes)html+=`<div class="fb-sec"><div class="fb-sec-lbl">🗣 Fluency</div><div class="fb-text">${p.fluency_notes}</div></div>`;
+    if(p.corrections&&p.corrections.length)html+=`<div class="fb-sec"><div class="fb-sec-lbl">✏️ Grammar</div><div class="fb-text">${p.corrections.map(c=>`<div class="corr-item"><span>→</span><div><del>"${c.original}"</del> → <ins>"${c.better}"</ins><br><span style="font-size:11px;color:var(--dim)">${c.reason}</span></div></div>`).join('')}</div></div>`;
+    if(p.vocabulary_upgrade&&p.vocabulary_upgrade.length)html+=`<div class="fb-sec"><div class="fb-sec-lbl">📚 Vocabulary</div><div class="fb-text">${p.vocabulary_upgrade.map(v=>`<div class="corr-item"><span>→</span><div><del>"${v.used}"</del> → <ins>"${v.better}"</ins></div></div>`).join('')}</div></div>`;
+    if(p.pronunciation_focus)html+=`<div class="tip-box">🔊 Pronunciation: ${p.pronunciation_focus}</div>`;
+    if(p.one_big_tip)html+=`<div class="tip-blue">📌 Biggest tip: ${p.one_big_tip}</div>`;
+    body.innerHTML=html;
+    saveHistory(text,{overall:p.overall,scores:p.scores},'Free speaking');
+  }catch(e){title.innerHTML='⚠ Error';body.innerHTML=`<div class="fb-text" style="color:var(--red)">${e.message}</div>`;document.getElementById('fAnalyseBtn').disabled=false;}
+}
+
+// ══ MANAGER SIM ══
+function pickMgr(btn,key){document.querySelectorAll('#mgrGrid .setup-opt').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');chosenMgr=key;checkSimReady();}
+function pickCtx(btn,key){document.querySelectorAll('#ctxGrid .setup-opt').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');chosenCtx=key;checkSimReady();}
+function pickMode(mode){chosenInputMode=mode;document.getElementById('modeVoice').classList.toggle('sel',mode==='voice');document.getElementById('modeType').classList.toggle('sel',mode==='type');checkSimReady();}
+function checkSimReady(){document.getElementById('startSimBtn').disabled=!(chosenMgr&&chosenCtx);}
+
+function buildSimSystem(){
+  return `${MGR[chosenMgr].system}\n\nMeeting context: ${CTX[chosenCtx]}\n\nRULES:\n- Ask ONE question per turn only.\n- Reply briefly in character (1-3 sentences), then ask your next question.\n- After 5-6 exchanges, wrap up naturally with a closing remark.\n- Stay as ${MGR[chosenMgr].name}. Never give coaching yourself.`;
 }
 
 async function startSim(){
   const mgr=MGR[chosenMgr];
   simHistory=[];simScores=[];simRound=0;sessionEnded=false;
-  document.getElementById('chatArea').innerHTML='';
-  document.getElementById('mgrAvatar').textContent=mgr.emoji;
-  document.getElementById('mgrName').textContent=mgr.name;
-  document.getElementById('mgrRole').textContent=mgr.role;
-  showScreen('convScreen');
-  setStatus('idle','Starting…');setMicOff();
+  document.getElementById('simChat').innerHTML='';
+  document.getElementById('simSummaryWrap').style.display='none';
+  document.getElementById('simSetup').style.display='none';
+  document.getElementById('simActive').style.display='block';
+  document.getElementById('simVoiceZone').style.display=chosenInputMode==='voice'?'block':'none';
+  document.getElementById('simTypeZone').style.display=chosenInputMode==='type'?'block':'none';
+  setSimStatus('idle','Starting…');setSimMicOff();
+  addSimMsg('mgr','…','');
   try{
-    const sysPrompt=buildSystem();
-    const opening=await callClaude([{role:'user',content:'Begin the meeting now. Greet me briefly and ask your first question.'}],sysPrompt,300);
+    const opening=await callClaudeMsgs([{role:'user',content:'Begin the meeting. Greet me and ask your first question.'}],buildSimSystem(),300);
+    document.getElementById('simChat').innerHTML='';
     simHistory.push({role:'assistant',content:opening});
-    addBubble('mgr',opening);simRound=1;
-    await speakText(opening);
-  }catch(e){addBubble('mgr','⚠ Error: '+e.message);setMicOn();}
+    addSimMsg('mgr',opening,'');
+    simRound=1;updateSimRound();
+    if(chosenInputMode==='voice')await speakText(opening);
+    else{setSimStatus('idle','Type your answer below');document.getElementById('simTypeInput').focus();}
+  }catch(e){document.getElementById('simChat').innerHTML='';addSimMsg('mgr','⚠ Error: '+e.message,'');}
 }
 
 function speakText(text){
@@ -252,146 +772,204 @@ function speakText(text){
     utt.lang='en-US';utt.rate=mgr.vRate;utt.pitch=mgr.vPitch;
     const voices=synth.getVoices().filter(v=>v.lang.startsWith('en'));
     if(voices.length){const idx=Object.keys(MGR).indexOf(chosenMgr);utt.voice=voices[Math.min(idx,voices.length-1)];}
-    setStatus('speaking','Manager speaking…');
-    document.getElementById('speakingIndicator').classList.add('active');
-    setMicOff();
+    setSimStatus('speaking','Manager speaking…');
+    document.getElementById('simSpeakInd').classList.add('active');
+    setSimMicOff();
     utt.onend=utt.onerror=()=>{
-      document.getElementById('speakingIndicator').classList.remove('active');
-      if(!sessionEnded){setStatus('idle','Tap mic to speak');setMicOn();}
+      document.getElementById('simSpeakInd').classList.remove('active');
+      if(!sessionEnded){setSimStatus('idle','Tap mic to speak');setSimMicOn();}
       resolve();
     };
     synth.speak(utt);
   });
 }
 
-function toggleMic(){if(isListening)stopListening();else startListening();}
+function toggleSimMic(){if(simIsRecording)stopSimMic();else startSimMic();}
 
-function startListening(){
-  if(!SpeechRec){const t=prompt('Voice not supported. Type your answer:');if(t?.trim())handleSpeech(t.trim());return;}
-  micFinal='';
-  recognition=new SpeechRec();
-  recognition.continuous=true;recognition.interimResults=true;recognition.lang='en-US';
-  recognition.onresult=e=>{
+function startSimMic(){
+  if(!SpeechRec){alert('Voice recognition requires Chrome browser.');return;}
+  simFinal='';
+  simRecognition=new SpeechRec();
+  simRecognition.continuous=true;simRecognition.interimResults=true;simRecognition.lang='en-US';
+  simRecognition.onresult=e=>{
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
-      if(e.results[i].isFinal)micFinal+=e.results[i][0].transcript+' ';
+      if(e.results[i].isFinal)simFinal+=e.results[i][0].transcript+' ';
       else interim+=e.results[i][0].transcript;
     }
-    const lt=document.getElementById('liveTranscript');
-    lt.textContent=(micFinal+interim).trim()||'Listening…';
+    document.getElementById('simLive').textContent=(simFinal+interim).trim()||'Listening…';
   };
-  recognition.onend=()=>{
-    if(!isListening)return;
-    isListening=false;resetMicVisual();
-    const text=micFinal.trim();
-    if(text)handleSpeech(text);
-    else setStatus('idle','Didn\'t catch that — tap mic to retry');
+  simRecognition.onend=()=>{
+    if(simIsRecording){try{simRecognition.start();}catch(e){stopSimMic();}}
   };
-  recognition.onerror=e=>{isListening=false;resetMicVisual();if(e.error!=='no-speech')setStatus('idle','Mic error — tap to retry');};
-  recognition.start();isListening=true;
-  const btn=document.getElementById('micBtn');
-  btn.classList.add('listening');btn.classList.remove('off');btn.textContent='⏹';
-  document.getElementById('waveform').classList.add('active');
-  document.getElementById('liveTranscript').classList.add('active');
-  document.getElementById('liveTranscript').textContent='Listening…';
-  document.getElementById('micHint').textContent='Listening… tap ⏹ to stop';
-  document.getElementById('micHint').className='mic-hint listening';
-  setStatus('listening','Listening…');
+  simRecognition.onerror=()=>{stopSimMic();};
+  simRecognition.start();
+  simIsRecording=true;
+  const btn=document.getElementById('simMicBtn');
+  btn.classList.add('recording');btn.classList.remove('off');btn.textContent='⏹';
+  document.getElementById('simLive').textContent='Listening…';
+  setSimStatus('listening','Listening…');
 }
 
-function stopListening(){isListening=false;if(recognition){recognition.stop();recognition=null;}resetMicVisual();}
-
-function resetMicVisual(){
-  document.getElementById('waveform').classList.remove('active');
-  document.getElementById('liveTranscript').classList.remove('active');
-  const btn=document.getElementById('micBtn');btn.classList.remove('listening');btn.textContent='🎤';
+function stopSimMic(){
+  simIsRecording=false;
+  if(simRecognition){simRecognition.onend=null;simRecognition.stop();simRecognition=null;}
+  const btn=document.getElementById('simMicBtn');
+  btn.classList.remove('recording');btn.textContent='🎤';
+  const text=simFinal.trim();
+  document.getElementById('simLive').textContent=text||'Tap mic to speak';
+  if(text){setSimMicOff();handleSimReply(text);}
+  else setSimStatus('idle','Tap mic to speak');
 }
 
-async function handleSpeech(text){
+function simTypeEnter(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendSimType();}}
+function sendSimType(){
+  const input=document.getElementById('simTypeInput');
+  const text=input.value.trim();
+  if(!text)return;
+  input.value='';
+  handleSimReply(text);
+}
+
+async function handleSimReply(text){
   if(!text||sessionEnded)return;
-  setMicOff();setStatus('idle','Processing…');
+  synth.cancel();
+  setSimMicOff();setSimStatus('idle','Processing…');
   const lastMgrQ=simHistory.filter(m=>m.role==='assistant').slice(-1)[0]?.content||'';
-  addBubble('you',text);simHistory.push({role:'user',content:text});addTyping();
+  addSimMsg('you',text,'');
+  simHistory.push({role:'user',content:text});
+  addTyping();
   try{
     const [mgrReply,coachRaw]=await Promise.all([
-      callClaude(simHistory,buildSystem()),
-      callClaude([{role:'user',content:`Communication coach. Non-native speaker answered manager.\nManager: "${lastMgrQ}"\nAnswer: "${text}"\nJSON only no markdown:\n{"clarity":7,"structure":6,"directness":7,"verdict":"good","coaching":"One tip max 18 words","question_type":"update"}`}],null,200).catch(()=>null)
+      callClaudeMsgs(simHistory,buildSimSystem(),300),
+      callClaude(`Communication coach. Non-native speaker answered manager.\nManager: "${lastMgrQ}"\nAnswer: "${text}"\nJSON only no markdown:\n{"clarity":7,"structure":6,"directness":7,"verdict":"good","coaching":"One tip max 18 words","question_type":"update"}`,200).catch(()=>null)
     ]);
     removeTyping();
     if(coachRaw){
       try{
-        const cp=JSON.parse(coachRaw.trim());simScores.push(cp);
+        const cp=JSON.parse(coachRaw.trim());
+        simScores.push(cp);
         const avg=Math.round((cp.clarity+cp.structure+cp.directness)/3);
         attachCoaching(`${cp.verdict==='good'?'✓':'⚠'} [${cp.question_type} · ${avg}/10] ${cp.coaching}`,cp.verdict!=='good');
       }catch(e){}
     }
-    simHistory.push({role:'assistant',content:mgrReply});simRound++;addBubble('mgr',mgrReply);
+    simHistory.push({role:'assistant',content:mgrReply});
+    simRound++;updateSimRound();
+    addSimMsg('mgr',mgrReply,'');
     const lower=mgrReply.toLowerCase();
-    const ending=simRound>=7||(lower.includes('thank')&&(lower.includes('meeting')||lower.includes('next time')||lower.includes('wrap')));
-    if(ending){sessionEnded=true;await speakText(mgrReply);setTimeout(endSim,1000);}
-    else await speakText(mgrReply);
-  }catch(e){removeTyping();addBubble('mgr','⚠ Error: '+e.message);setMicOn();}
+    const ending=simRound>=7||(lower.includes('thank')&&(lower.includes('meeting')||lower.includes('next time')||lower.includes('wrap')||lower.includes("that's all")));
+    if(ending){sessionEnded=true;if(chosenInputMode==='voice')await speakText(mgrReply);setTimeout(endSim,800);}
+    else if(chosenInputMode==='voice')await speakText(mgrReply);
+    else{setSimStatus('idle','Type your reply below');document.getElementById('simTypeInput').focus();}
+  }catch(e){removeTyping();addSimMsg('mgr','⚠ Error: '+e.message,'');if(chosenInputMode==='voice')setSimMicOn();}
 }
 
-function addBubble(role,text){
-  const chat=document.getElementById('chatArea');
+function addSimMsg(role,text,coaching){
+  const chat=document.getElementById('simChat');
+  const empty=document.getElementById('simEmpty');if(empty)empty.remove();
   const mgr=MGR[chosenMgr]||{name:'Manager',emoji:'👔'};
   const isYou=role==='you';
-  const div=document.createElement('div');div.className='msg'+(isYou?' you':'');
-  div.innerHTML=`<div class="msg-avatar ${isYou?'you':'mgr'}">${isYou?'🙂':mgr.emoji}</div><div class="msg-content"><div class="msg-name">${isYou?'You':mgr.name}</div><div class="bubble ${isYou?'you':'mgr'}">${text.replace(/\n/g,'<br>')}</div></div>`;
+  const div=document.createElement('div');div.className='chat-msg'+(isYou?' you':'');
+  div.innerHTML=`<div class="chat-av ${isYou?'you':'mgr'}">${isYou?'🙂':mgr.emoji}</div><div class="chat-wrap"><div class="chat-name">${isYou?'You':mgr.name}</div><div class="chat-bubble ${isYou?'you':'mgr'}">${text.replace(/\n/g,'<br>')}</div>${coaching?`<div class="coaching-chip ${coaching.warn?'warn':''}">${coaching.text}</div>`:''}</div>`;
   chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
 }
 
 function attachCoaching(text,isWarn){
-  const chat=document.getElementById('chatArea');
-  const youMsgs=[...chat.querySelectorAll('.msg.you')];
+  const chat=document.getElementById('simChat');
+  const youMsgs=[...chat.querySelectorAll('.chat-msg.you')];
   const last=youMsgs[youMsgs.length-1];if(!last)return;
   const chip=document.createElement('div');chip.className='coaching-chip'+(isWarn?' warn':'');chip.textContent=text;
-  last.querySelector('.msg-content').appendChild(chip);chat.scrollTop=chat.scrollHeight;
+  last.querySelector('.chat-wrap').appendChild(chip);chat.scrollTop=chat.scrollHeight;
 }
 
 function addTyping(){
-  const chat=document.getElementById('chatArea');const mgr=MGR[chosenMgr]||{name:'Manager',emoji:'👔'};
-  const div=document.createElement('div');div.className='msg';div.id='typingMsg';
-  div.innerHTML=`<div class="msg-avatar mgr">${mgr.emoji}</div><div class="msg-content"><div class="msg-name">${mgr.name}</div><div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  const chat=document.getElementById('simChat');const mgr=MGR[chosenMgr]||{name:'Manager',emoji:'👔'};
+  const div=document.createElement('div');div.className='chat-msg';div.id='typingMsg';
+  div.innerHTML=`<div class="chat-av mgr">${mgr.emoji}</div><div class="chat-wrap"><div class="chat-name">${mgr.name}</div><div class="typing-bubble"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div></div>`;
   chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
 }
-
 function removeTyping(){document.getElementById('typingMsg')?.remove();}
-function setStatus(type,text){document.getElementById('statusDot').className='status-dot '+type;document.getElementById('statusText').textContent=text;}
-function setMicOn(){const btn=document.getElementById('micBtn');btn.classList.remove('off','listening');btn.textContent='🎤';document.getElementById('micHint').textContent='Tap mic to speak your answer';document.getElementById('micHint').className='mic-hint';}
-function setMicOff(){const btn=document.getElementById('micBtn');btn.classList.add('off');btn.classList.remove('listening');btn.textContent='🎤';document.getElementById('waveform').classList.remove('active');document.getElementById('liveTranscript').classList.remove('active');}
+
+function setSimStatus(type,text){
+  const dot=document.getElementById('simDot');
+  dot.className='sdot '+(type==='idle'?'idle':type==='speaking'?'speaking':type==='listening'?'listening':'idle');
+  document.getElementById('simStatusTxt').textContent=text;
+}
+function setSimMicOn(){const btn=document.getElementById('simMicBtn');if(btn){btn.classList.remove('off','recording');btn.textContent='🎤';document.getElementById('simLive').textContent='Tap mic to speak';}}
+function setSimMicOff(){const btn=document.getElementById('simMicBtn');if(btn){btn.classList.add('off');btn.classList.remove('recording');btn.textContent='🎤';}}
+function updateSimRound(){document.getElementById('simRoundTxt').textContent='Round '+simRound;}
 
 async function endSim(){
   sessionEnded=true;synth.cancel();
-  if(recognition){recognition.stop();recognition=null;}isListening=false;
-  const mgr=MGR[chosenMgr];
-  const ctxNames={weekly:'Weekly Check-in',problem:'Problem / Incident',review:'Performance Review',strategy:'Strategy Discussion'};
-  document.getElementById('summarySubtitle').textContent=`${mgr.name} · ${ctxNames[chosenCtx]} · ${simRound} exchanges`;
-  showScreen('summaryScreen');
-  if(simScores.length===0){document.getElementById('summaryContent').innerHTML='<div class="sum-card">Complete at least 2 exchanges to get a full report.</div>';return;}
+  if(simRecognition){simRecognition.onend=null;simRecognition.stop();simRecognition=null;}simIsRecording=false;
+  setSimMicOff();
+  document.getElementById('simVoiceZone').style.display='none';
+  document.getElementById('simTypeZone').style.display='none';
+  const wrap=document.getElementById('simSummaryWrap');
+  wrap.style.display='block';
+  const scoreGrid=document.getElementById('simScoreGrid');
+  const body=document.getElementById('simSummaryBody');
+  scoreGrid.innerHTML='<span class="spinner"></span>';body.innerHTML='';
+  if(simScores.length===0){scoreGrid.innerHTML='';body.innerHTML='<div class="sum-card">Complete at least 2 exchanges to see your summary.</div>';return;}
   const avg=arr=>Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
   const clarity=avg(simScores.map(s=>s.clarity));
   const structure=avg(simScores.map(s=>s.structure));
   const directness=avg(simScores.map(s=>s.directness));
   const overall=avg([clarity,structure,directness]);
-  const cc=n=>n>=8?'':n>=6?'mid':'low';
-  document.getElementById('summaryContent').innerHTML=`<div class="score-row"><div class="score-chip"><div class="score-num ${cc(overall)}">${overall}/10</div><div class="score-lbl">Overall</div></div><div class="score-chip"><div class="score-num ${cc(clarity)}">${clarity}/10</div><div class="score-lbl">Clarity</div></div><div class="score-chip"><div class="score-num ${cc(structure)}">${structure}/10</div><div class="score-lbl">Structure</div></div><div class="score-chip"><div class="score-num ${cc(directness)}">${directness}/10</div><div class="score-lbl">Directness</div></div></div><div class="spinner-wrap"><span class="spinner"></span> Generating coaching report…</div>`;
+  const cc=n=>n>=8?'good':n>=6?'mid':'low';
+  scoreGrid.innerHTML=`
+    <div class="score-box"><div class="score-val" style="color:var(--blue)">${overall}/10</div><div class="score-bar-wrap"><div class="score-bar" style="background:var(--blue);width:${overall*10}%"></div></div><div class="score-lbl">Overall</div></div>
+    <div class="score-box"><div class="score-val" style="color:var(--green)">${clarity}/10</div><div class="score-bar-wrap"><div class="score-bar" style="background:var(--green);width:${clarity*10}%"></div></div><div class="score-lbl">Clarity</div></div>
+    <div class="score-box"><div class="score-val" style="color:var(--purple)">${structure}/10</div><div class="score-bar-wrap"><div class="score-bar" style="background:var(--purple);width:${structure*10}%"></div></div><div class="score-lbl">Structure</div></div>
+    <div class="score-box"><div class="score-val" style="color:var(--amber)">${directness}/10</div><div class="score-bar-wrap"><div class="score-bar" style="background:var(--amber);width:${directness*10}%"></div></div><div class="score-lbl">Directness</div></div>`;
   try{
     const transcript=simHistory.map(m=>`${m.role==='assistant'?'MANAGER':'YOU'}: ${m.content}`).join('\n\n');
-    const raw=await callClaude([{role:'user',content:`Senior communication coach. Non-native English speaker tends to circle when put on spot by manager.\nTranscript:\n${transcript}\nJSON only no markdown:\n{"manager_impression":"1 sentence","top_strength":"specific","top_weakness":"specific with example","circling_detected":true,"circling_example":"exact phrase or empty","one_drill":"max 22 words"}`}],null,600);
+    const raw=await callClaude(`Senior communication coach reviewing a manager meeting simulation. Employee is a fluent non-native speaker who tends to circle when put on the spot.\n\nTranscript:\n${transcript}\n\nJSON only no markdown:\n{"manager_impression":"1 sentence how manager saw this person","top_strength":"specific strength","top_weakness":"specific fix with example from transcript","circling_detected":true,"circling_example":"exact phrase or empty string","best_moment":"question where they answered best — quote the question","one_drill":"what to practise this week — max 22 words"}`,600);
     const cp=JSON.parse(raw.trim());
-    document.getElementById('summaryContent').innerHTML=`<div class="score-row"><div class="score-chip"><div class="score-num ${cc(overall)}">${overall}/10</div><div class="score-lbl">Overall</div></div><div class="score-chip"><div class="score-num ${cc(clarity)}">${clarity}/10</div><div class="score-lbl">Clarity</div></div><div class="score-chip"><div class="score-num ${cc(structure)}">${structure}/10</div><div class="score-lbl">Structure</div></div><div class="score-chip"><div class="score-num ${cc(directness)}">${directness}/10</div><div class="score-lbl">Directness</div></div></div><div class="sum-section"><div class="sum-label">How your manager saw you</div><div class="sum-card" style="font-style:italic">"${cp.manager_impression}"</div></div><div class="sum-section"><div class="sum-label">Top strength</div><div class="sum-card">✓ <strong>${cp.top_strength}</strong></div></div><div class="sum-section"><div class="sum-label">Most important fix</div><div class="sum-card">⚠ <strong>${cp.top_weakness}</strong></div></div>${cp.circling_detected&&cp.circling_example?`<div class="sum-section"><div class="sum-label">Circling detected</div><div class="sum-card" style="color:var(--amber)">🔄 "${cp.circling_example}"<br><span style="font-size:12px;color:var(--dim);margin-top:4px;display:block">Fix: state your conclusion in your very first sentence.</span></div></div>`:`<div class="sum-card" style="color:var(--green);margin-bottom:14px">✓ No major circling this session — good work.</div>`}<div class="tip-card">📌 This week's drill: ${cp.one_drill}</div>`;
-  }catch(e){document.getElementById('summaryContent').innerHTML+=`<div class="sum-card" style="color:var(--red)">Could not load full report: ${e.message}</div>`;}
+    body.innerHTML=`
+      <div class="sum-card" style="font-style:italic;margin-bottom:8px">"${cp.manager_impression}"</div>
+      <div class="sum-card"><strong>✓ Strength:</strong> ${cp.top_strength}</div>
+      <div class="sum-card"><strong>⚠ Fix:</strong> ${cp.top_weakness}</div>
+      ${cp.circling_detected&&cp.circling_example?`<div class="sum-card" style="color:var(--amber)">🔄 Circling: "${cp.circling_example}"<br><span style="font-size:11px;color:var(--dim);margin-top:3px;display:block">Fix: state your conclusion in sentence 1.</span></div>`:
+      `<div class="sum-card" style="color:var(--green)">✓ No major circling — good job staying on point.</div>`}
+      <div class="tip-box">📌 This week: ${cp.one_drill}</div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="resetSim()">🔄 New Simulation</button>
+        <button class="btn btn-ghost btn-sm" onclick="switchTab('history')">📊 See History</button>
+      </div>`;
+    saveHistory(transcript.slice(0,150),{overall,scores:{clarity,structure,directness:directness}},'Manager Sim');
+  }catch(e){body.innerHTML=`<div class="sum-card" style="color:var(--red)">Could not load full report: ${e.message}</div>`;}
 }
 
-function goSetup(){
-  synth.cancel();if(recognition){recognition.stop();recognition=null;}
-  isListening=false;sessionEnded=false;
-  document.querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
-  chosenMgr=null;chosenCtx=null;checkReady();showScreen('setupScreen');
+function resetSim(){
+  synth.cancel();sessionEnded=false;simHistory=[];simScores=[];simRound=0;
+  document.querySelectorAll('.setup-opt').forEach(b=>b.classList.remove('sel'));
+  chosenMgr=null;chosenCtx=null;
+  document.getElementById('startSimBtn').disabled=true;
+  document.getElementById('simSetup').style.display='block';
+  document.getElementById('simActive').style.display='none';
 }
 
+// ══ HISTORY ══
+function saveHistory(text,parsed,prompt){
+  totalSessions++;
+  const score=parsed.overall||7;
+  allScores.push(score);
+  const entry={time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),date:new Date().toLocaleDateString(),prompt:prompt||'',text:text.slice(0,100)+(text.length>100?'…':''),score,scores:parsed.scores||{}};
+  const list=document.getElementById('historyList');
+  const empty=list.querySelector('div[style]');if(empty)empty.remove();
+  const cc=n=>n>=8?'good':n>=6?'mid':'low';
+  const div=document.createElement('div');div.className='hist-item';
+  div.innerHTML=`<div class="hist-meta">${entry.date} ${entry.time} — ${entry.prompt.slice(0,50)}</div><div class="hist-text">"${entry.text}"</div><div class="hist-chips"><span class="hchip ${cc(score)}">Overall: ${score}/10</span>${Object.entries(entry.scores).slice(0,3).map(([k,v])=>`<span class="hchip ${cc(v)}">${k}: ${v}</span>`).join('')}</div>`;
+  list.insertBefore(div,list.firstChild);
+  document.getElementById('hTotalSessions').textContent=totalSessions;
+  document.getElementById('hAvgScore').textContent=Math.round(allScores.reduce((a,b)=>a+b,0)/allScores.length)+'/10';
+  document.getElementById('hBestScore').textContent=Math.max(...allScores)+'/10';
+  document.getElementById('streakBadge').textContent=totalSessions+(totalSessions===1?' session':' sessions');
+}
+
+// Init
+newPrompt('all');
 synth.onvoiceschanged=()=>synth.getVoices();
 synth.getVoices();
 </script>

@@ -9,8 +9,7 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key, anthropic-version');
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
   if (req.method === 'POST' && req.url === '/api/claude') {
@@ -19,7 +18,7 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       if (!ANTHROPIC_API_KEY) {
         res.writeHead(500, {'Content-Type':'application/json'});
-        res.end(JSON.stringify({error:{message:'API key not set on server'}}));
+        res.end(JSON.stringify({error:{message:'API key not configured on server. Add ANTHROPIC_API_KEY to Render environment variables.'}}));
         return;
       }
       const options = {
@@ -36,9 +35,7 @@ const server = http.createServer((req, res) => {
         let data = '';
         proxyRes.on('data', chunk => data += chunk);
         proxyRes.on('end', () => {
-          if(proxyRes.statusCode !== 200) {
-            console.error('Anthropic API error:', proxyRes.statusCode, data);
-          }
+          if (proxyRes.statusCode !== 200) console.error('Anthropic error:', proxyRes.statusCode, data.slice(0,200));
           res.writeHead(proxyRes.statusCode, {'Content-Type':'application/json'});
           res.end(data);
         });
@@ -53,7 +50,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  let filePath = req.url === '/' ? '/voice-manager-sim.html' : req.url;
+  let filePath = req.url === '/' ? '/index.html' : req.url;
   filePath = path.join(__dirname, filePath);
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
@@ -65,5 +62,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('Voice Manager Sim running on port ' + PORT);
+  console.log('SpeakUp Pro running on port ' + PORT);
 });
